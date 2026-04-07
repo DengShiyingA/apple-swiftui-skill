@@ -3189,6 +3189,225 @@ func add(_ a: Int, _ b: Int) -> Int { a + b }
 // 支持 @Tutorial 编写交互式教程
 ```
 
+
+## StoreKit 视图组件（iOS 17+）
+```swift
+import StoreKit
+
+// 单个产品展示
+ProductView(id: "com.app.premium") {
+    Image(systemName: "crown")
+}
+.productViewStyle(.large)
+
+// 订阅组展示（自动处理升级/降级）
+SubscriptionStoreView(groupID: "premium_group")
+    .subscriptionStoreControlStyle(.prominentPicker)
+    .subscriptionStoreButtonLabel(.multiline)
+    .containerBackground(for: .subscriptionStoreFullHeight) {
+        LinearGradient(colors: [.blue, .purple], startPoint: .top, endPoint: .bottom)
+    }
+
+// 实时监听交易更新
+Task {
+    for await result in Transaction.updates {
+        if case .verified(let transaction) = result {
+            await transaction.finish()
+            unlockContent(for: transaction.productID)
+        }
+    }
+}
+
+// 恢复购买
+try await AppStore.sync()
+```
+
+## Writing Tools 集成（iOS 26，自定义文本视图）
+```swift
+import UIKit
+
+// 为自定义文本视图添加 Writing Tools 支持
+let coordinator = UIWritingToolsCoordinator(delegate: self)
+coordinator.preferredBehavior = .complete   // 或 .limited（仅校对）
+coordinator.preferredResultOptions = [.richText, .list]
+customTextView.addInteraction(coordinator)
+
+// 实现委托：提供上下文
+func writingToolsCoordinator(_ coordinator: UIWritingToolsCoordinator,
+    requestsContextsFor scope: UIWritingToolsCoordinator.ContextScope,
+    completion: @escaping ([UIWritingToolsCoordinator.Context]) -> Void) {
+    switch scope {
+    case .userSelection: completion([getSelectionContext()])
+    case .fullDocument: completion([getFullDocumentContext()])
+    default: completion([])
+    }
+}
+```
+
+## Widget containerBackground
+```swift
+// iOS 17+ Widget 背景（Smart Stack 自动移除背景）
+struct MyWidgetView: View {
+    var body: some View {
+        VStack { content }
+            .containerBackground(for: .widget) {
+                LinearGradient(colors: [.blue, .cyan], startPoint: .top, endPoint: .bottom)
+            }
+    }
+}
+// Lock Screen widget 自动忽略背景
+// accessoryWidgetBackground 用于小型锁屏 widget
+```
+
+## Vision 身体/手部姿态 + 人物分割 + 条码
+```swift
+import Vision
+
+// 身体姿态检测
+let bodyPoseRequest = VNDetectHumanBodyPoseRequest()
+try VNImageRequestHandler(cgImage: image).perform([bodyPoseRequest])
+if let observation = bodyPoseRequest.results?.first {
+    let points = try observation.recognizedPoints(.torso)
+    let neck = points[.neck]   // 各关节点位置 + 置信度
+    let hip = points[.root]
+}
+
+// 手部姿态检测
+let handPoseRequest = VNDetectHumanHandPoseRequest()
+handPoseRequest.maximumHandCount = 2
+try VNImageRequestHandler(cgImage: image).perform([handPoseRequest])
+if let hand = handPoseRequest.results?.first {
+    let thumbTip = try hand.recognizedPoint(.thumbTip)
+    let indexTip = try hand.recognizedPoint(.indexTip)
+    let distance = thumbTip.location.distance(to: indexTip.location)  // 捏合检测
+}
+
+// 人物分割（抠图）
+let segRequest = VNGeneratePersonSegmentationRequest()
+segRequest.qualityLevel = .balanced   // .fast / .balanced / .accurate
+try VNImageRequestHandler(cgImage: image).perform([segRequest])
+let mask = segRequest.results?.first?.pixelBuffer  // 遮罩 CVPixelBuffer
+
+// 条码识别
+let barcodeRequest = VNDetectBarcodesRequest()
+barcodeRequest.symbologies = [.qr, .ean13, .code128]
+try VNImageRequestHandler(cgImage: image).perform([barcodeRequest])
+for barcode in barcodeRequest.results ?? [] {
+    print(barcode.payloadStringValue ?? "")  // 条码内容
+}
+```
+
+## ARKit 图像追踪 + 地理锚定
+```swift
+// 图像追踪（识别现实中的图片并叠加 AR 内容）
+guard let referenceImages = ARReferenceImage.referenceImages(inGroupNamed: "AR Resources", bundle: nil) else { return }
+let config = ARImageTrackingConfiguration()
+config.trackingImages = referenceImages
+config.maximumNumberOfTrackedImages = 4
+arView.session.run(config)
+
+func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+    for anchor in anchors.compactMap({ $0 as? ARImageAnchor }) {
+        let imageName = anchor.referenceImage.name  // 识别到的图片名
+        // 在图片位置放置 3D 内容
+    }
+}
+
+// 地理锚定（特定 GPS 坐标放置 AR 内容）
+ARGeoTrackingConfiguration.checkAvailability { available, _ in
+    guard available else { return }
+    let config = ARGeoTrackingConfiguration()
+    arView.session.run(config)
+}
+let geoAnchor = ARGeoAnchor(coordinate: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194))
+arView.session.add(anchor: geoAnchor)
+```
+
+## PhotogrammetrySession（3D 物体扫描）
+```swift
+import RealityKit
+
+// 从照片重建 3D 模型
+guard PhotogrammetrySession.isSupported else { return }
+let session = try PhotogrammetrySession(input: photoFolderURL,
+    configuration: PhotogrammetrySession.Configuration())
+let request = PhotogrammetrySession.Request.modelFile(url: outputURL, detail: .full)
+try session.process(requests: [request])
+
+// 监听进度
+for try await output in session.outputs {
+    switch output {
+    case .processingComplete: print("Done!")
+    case .requestProgress(let request, let fraction): print("\(fraction * 100)%")
+    case .requestError(_, let error): print("Error: \(error)")
+    default: break
+    }
+}
+```
+
+## ReplayKit（屏幕录制）
+```swift
+import ReplayKit
+
+// 应用内录屏
+let recorder = RPScreenRecorder.shared()
+recorder.startRecording { error in
+    if let error { print("Recording failed: \(error)") }
+}
+
+// 停止并保存
+recorder.stopRecording { previewController, error in
+    if let preview = previewController {
+        present(preview, animated: true)  // 预览/保存/分享
+    }
+}
+
+// 实时采集（用于直播/AR 串流）
+recorder.startCapture { sampleBuffer, bufferType, error in
+    switch bufferType {
+    case .video: processVideoFrame(sampleBuffer)
+    case .audioApp: processAppAudio(sampleBuffer)
+    case .audioMic: processMicAudio(sampleBuffer)
+    @unknown default: break
+    }
+}
+```
+
+## UI 测试（XCUITest）
+```swift
+import XCTest
+
+class MyAppUITests: XCTestCase {
+    let app = XCUIApplication()
+
+    override func setUp() {
+        continueAfterFailure = false
+        app.launch()
+    }
+
+    func testAddItem() {
+        // 点击按钮
+        app.buttons["Add Item"].tap()
+
+        // 输入文字
+        let textField = app.textFields["Item Name"]
+        textField.tap()
+        textField.typeText("New Item")
+
+        // 验证元素存在
+        XCTAssertTrue(app.staticTexts["New Item"].exists)
+
+        // 滑动删除
+        let cell = app.cells.containing(.staticText, identifier: "New Item").firstMatch
+        cell.swipeLeft()
+        app.buttons["Delete"].tap()
+        XCTAssertFalse(app.staticTexts["New Item"].exists)
+    }
+}
+
+// Swift Testing + XCTest 可共存于同一 test target，逐步迁移
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
