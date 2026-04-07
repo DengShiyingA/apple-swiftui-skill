@@ -1,109 +1,77 @@
 ---
 name: swiftui-development
 description: >
-  SwiftUI + Swift 6.2 + Xcode 26 + Apple Intelligence 生产级开发知识包（iOS 26+ / iPadOS 26+ / macOS Tahoe 26+ / visionOS 26+）—— 声明式 UI、Liquid Glass 设计语言、Foundation Models on-device AI（含 context management & tool-calling）、App Intents、SwiftData、Observation 框架（Swift 6.2 Observations AsyncSequence）、性能优化、HIG 规范、多平台适配等。
-  
-  包含 280+ 代码示例、WWDC25/26 最佳实践、常见坑点。专为 Claude Code、Cursor、Xcode Coding Intelligence 等 AI 工具设计，帮助生成高质量、隐私优先、符合 Apple 规范的 Swift/SwiftUI 代码。
-  
-  Trigger keywords (EN): SwiftUI, Swift 6.2, Xcode 26, Apple Intelligence, Foundation Models, LanguageModelSession, @Generable, Guided Generation, Liquid Glass, glassEffect, @Observable, @Model, SwiftData, Observations AsyncSequence, WebView, Rich TextEditor, NavigationStack, TabView, List, ScrollView, async/await, Task, HIG, iOS 26, visionOS, Swift Testing, SF Symbols, WidgetKit, StoreKit, Coding Intelligence, spatial layout
-  
-  触发关键词（中文）: SwiftUI, Swift 6.2, Xcode 26, 苹果智能, Foundation Models, on-device AI, Liquid Glass, App Intents, SwiftData, Observation 框架, WebView, Rich TextEditor, iOS 26 开发, 多平台适配, 人机界面指南
+  SwiftUI + Swift 6.2 + Xcode 26 + Apple Intelligence 生产级开发知识包（iOS 26+ / iPadOS 26+ / macOS Tahoe 26+ / visionOS 26+）—— 声明式 UI、Liquid Glass、Foundation Models on-device AI、App Intents、SwiftData、WidgetKit、HealthKit、CloudKit、RealityKit、Apple Pay、CoreBluetooth、NaturalLanguage、CoreMotion 等完整框架覆盖。
+
+  包含 350+ 代码示例、WWDC25/26 最佳实践、常见坑点。专为 Claude Code、Cursor、Xcode Coding Intelligence 等 AI 工具设计。
+
+  Trigger keywords (EN): SwiftUI, Swift 6.2, Xcode 26, Apple Intelligence, Foundation Models, LanguageModelSession, @Generable, Guided Generation, Liquid Glass, glassEffect, GlassEffectContainer, glassEffectID, NavigationStack, zoom transition, @Observable, @Model, SwiftData, Observations AsyncSequence, WebView, Rich TextEditor, WidgetKit, Live Activities, App Intents, AppEntity, EntityQuery, AppShortcuts, HealthKit, CloudKit, RealityKit, RealityView, CoreBluetooth, NaturalLanguage, CoreMotion, Apple Pay, PassKit, Sign in with Apple, StoreKit 2, Xcode Cloud, DocC, Swift Testing, SF Symbols, visionOS, spatial layout
+
+  触发关键词（中文）: SwiftUI, Swift 6.2, Xcode 26, 苹果智能, Foundation Models, Liquid Glass, SwiftData, WidgetKit, App Intents, HealthKit, CloudKit, RealityKit, 蓝牙, 自然语言, Apple Pay, 登录苹果账号, StoreKit, 内购, iOS 26 开发, 多平台适配
 ---
 
-# SwiftUI Development - Production Knowledge Base（2026 年 4 月最终增强版）
+# SwiftUI Development - Production Knowledge Base（2026 年 4 月完整版）
 
-专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。主力 UI 框架 **SwiftUI**（声明式、高性能），结合 **Apple Intelligence**（Foundation Models on-device 大模型）和全新 **Liquid Glass** 设计语言。严格遵循 **Human Interface Guidelines (HIG)**，优先隐私、离线能力和流畅体验。
+专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。覆盖 SwiftUI、Apple Intelligence、Liquid Glass、SwiftData、WidgetKit、App Intents、HealthKit、CloudKit、RealityKit、Apple Pay 等全套生产级框架。
 
-## 何时使用本技能
-当用户提到以下场景时，提供**精准、生产就绪**的 SwiftUI + Swift 代码（默认 Swift 6.2 严格并发）：
-- 编写/重构 SwiftUI View、Navigation、List、动画、表单、WebView、Rich TextEditor
-- 集成 Apple Intelligence（Foundation Models 生成内容、guided generation、tool-calling）
-- 使用 SwiftData + Observation 框架（含 Swift 6.2 Observations AsyncSequence）
-- Liquid Glass 视觉效果、多平台适配（iPhone / iPad / Mac / Vision Pro / CarPlay）
-- App Intents 与 Siri / Spotlight / Shortcuts / Widgets 集成
-- 性能优化、Accessibility、Xcode 26 Coding Intelligence
+## 平台快照
+| 项目 | 值 |
+|------|-----|
+| OS | iOS 26 / iPadOS 26 / macOS Tahoe 26 / visionOS 26 |
+| 语言 | **Swift 6.2**（严格并发 + Observations AsyncSequence） |
+| UI 框架 | **SwiftUI** + **Liquid Glass** 设计语言 |
+| AI 框架 | **Foundation Models**（on-device LLM，2026.02 更新） |
+| 数据持久化 | **SwiftData**（推荐）|
+| 状态管理 | **Observation 框架**（@Observable + Observations AsyncSequence） |
+| IDE | **Xcode 26**（Coding Intelligence + SwiftUI Performance Instrument） |
 
-**核心原则**：
-- 新项目优先纯 SwiftUI
-- 必要时使用 Representable 混合 UIKit
-- 所有代码必须兼容 Swift 6.2 Data Race Safety
-
-## 平台快照（2026 年 4 月最新）
-| 项目                  | 值                                              |
-|-----------------------|-------------------------------------------------|
-| OS                    | iOS 26 / iPadOS 26 / macOS Tahoe 26 / visionOS 26 |
-| 语言                  | **Swift 6.2**（严格并发 + Observations 增强）   |
-| UI 框架               | **SwiftUI** + **Liquid Glass** 设计语言         |
-| AI 框架               | **Foundation Models**（on-device LLM，Apple Intelligence 核心，2026 年 2 月更新提升 instruction-following 和 tool-calling） |
-| 数据持久化            | **SwiftData**（推荐）                           |
-| 状态管理              | **Observation 框架**（@Observable + Swift 6.2 Observations AsyncSequence） |
-| IDE                   | **Xcode 26**（内置 Coding Intelligence + 新 SwiftUI Performance Instrument） |
-
-## 项目结构（现代 SwiftUI App）
+## 项目结构
 ```
 MyApp/
-├─ MyApp.swift                  # @main App 入口
+├─ MyApp.swift          # @main App 入口
 ├─ ContentView.swift
-├─ Models/                      # @Model / @Observable 类
-├─ Views/                       # SwiftUI Views
-├─ ViewModels/                  # 可选（Observation 框架下常简化）
-├─ Services/                    # Network、AI Session 等
-├─ Resources/                   # Assets, Localizable.strings
-└─ Preview Content/             # Preview 数据
+├─ Models/              # @Model / @Observable 类
+├─ Views/               # SwiftUI Views
+├─ Services/            # Network、AI Session、HealthKit 等
+├─ Intents/             # App Intents
+├─ Widgets/             # WidgetKit Extension
+└─ Preview Content/     # Preview 数据
 ```
 
-## Liquid Glass 设计语言（iOS 26 核心视觉更新）
-Liquid Glass 是苹果 2025 WWDC 推出的全新自适应材料：半透明、反射/折射环境光、动态流体效果，统一跨平台设计语言。
+## Liquid Glass 设计语言（iOS 26）
+Liquid Glass：半透明、折射环境光、动态流体效果。
 
-**核心修饰符**：
 ```swift
-.background(.ultraThinMaterial)     // 或 .regularMaterial, .thickMaterial
-.glassEffect()                      // 新增专用效果（边框折射、光感）
+// 基础效果
+.background(.ultraThinMaterial)
+.glassEffect()                         // 边框折射 + 光感
 .clipShape(.rect(cornerRadius: 24, style: .continuous))
-.shadow(radius: 8, y: 4)
-```
 
-**卡片式 Liquid Glass 示例**：
-```swift
-struct GlassCard: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "star.fill")
-                .font(.largeTitle)
-                .foregroundStyle(.yellow)
-            Text("Featured")
-                .font(.headline)
-        }
-        .padding()
-        .background(.ultraThinMaterial)
-        .glassEffect()
-        .clipShape(.rect(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
+// 多个效果必须用 GlassEffectContainer（性能关键）
+GlassEffectContainer(spacing: 40) {
+    HStack(spacing: 40) {
+        Image(systemName: "star.fill").glassEffect()
+        Text("Featured").glassEffect(.regular.tint(.orange).interactive())
     }
 }
+
+// glassEffectID + @Namespace 实现形状 morphing 过渡
+@Namespace private var ns
+Image("icon")
+    .glassEffect()
+    .glassEffectID("icon", in: ns)
+    .glassEffectTransition(.materialize)  // 或 .matchedGeometry
 ```
 
 **Toolbar + Liquid Glass**：
 ```swift
-.toolbar {
-    ToolbarItem(placement: .principal) {
-        Text("Title")
-            .foregroundStyle(.primary)
-    }
-}
 .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
 ```
 
-**推荐实践**（HIG）：
-- 工具栏、卡片、导航栏、Widget、图标广泛使用 Liquid Glass
-- 结合 `.background(.ultraThinMaterial)` + `.glassEffect()` 让内容更突出
-- 自动适配 Light/Dark Mode 和环境光
-- 避免在 Liquid Glass 上叠加过多不透明元素
+**HIG 要点**：多个 glassEffect 必须包在 `GlassEffectContainer` 中，否则性能下降；自动适配 Dark Mode。
 
-## SwiftUI 基础与现代写法（Swift 6.2）
+## SwiftUI 基础（Swift 6.2）
 ```swift
-import SwiftUI
-
 @Observable
 class CounterViewModel {
     var count = 0
@@ -111,514 +79,746 @@ class CounterViewModel {
 }
 
 struct CounterView: View {
-    @State private var viewModel = CounterViewModel()
-    
+    @State private var vm = CounterViewModel()
     var body: some View {
         VStack(spacing: 20) {
-            Text("Count: \(viewModel.count)")
-                .font(.largeTitle)
-            
-            Button("Increment", action: viewModel.increment)
-                .buttonStyle(.borderedProminent)
+            Text("Count: \(vm.count)").font(.largeTitle)
+            Button("Increment", action: vm.increment).buttonStyle(.borderedProminent)
         }
         .padding()
         .navigationTitle("Counter")
     }
 }
-
-#Preview {
-    NavigationStack {
-        CounterView()
-    }
-}
+#Preview { NavigationStack { CounterView() } }
 ```
 
-**关键变化（2026 年）**：
-- `@Observable` 宏取代旧的 `ObservableObject + @Published`
-- `@State` 直接持有可观察对象，无需 `@StateObject`
-- SwiftUI 自动跟踪属性变化，性能更细粒度
-
-## 状态管理（Observation 框架 + Swift 6.2 增强）
-
-### @Observable 基础用法
+## 状态管理（Observation 框架）
 ```swift
-import Observation
-
-@Observable
-class UserProfile {
-    var name: String = ""
-    var avatar: String = "person.circle"
-    var isLoggedIn: Bool = false
-}
-
-struct ProfileView: View {
-    @State private var profile = UserProfile()
-    
-    var body: some View {
-        // SwiftUI 自动细粒度追踪：仅当 name 变化时 Text 才更新
-        Text(profile.name)
-    }
-}
-```
-
-### Swift 6.2 Observations AsyncSequence（transactional 状态流）
-```swift
-import Observation
-
-@Observable
-class ShoppingCart {
+// Swift 6.2 Observations AsyncSequence（transactional 快照）
+@Observable class ShoppingCart {
     var items: [String] = []
     var total: Decimal = 0
 }
-
 let cart = ShoppingCart()
 
-// 监听整个对象的 transactional 变更
 Task {
     for await _ in Observations(of: cart) {
-        // 收到一致的 transaction 快照（批量处理同步变更）
-        print("Cart updated: \(cart.items.count) items, total: \(cart.total)")
+        // 批量同步变更后发出一致快照，适合持久化/日志
+        print("Cart: \(cart.items.count) items, \(cart.total)")
     }
 }
 
-// 监听单个属性
-let observations = Observations { cart.total }
-Task {
-    for await newTotal in observations {
-        print("Total changed to: \(newTotal)")
-        // 可用于持久化、日志、网络同步等非 UI 场景
-    }
+// 单属性观察
+for await newTotal in Observations { cart.total } {
+    print("Total: \(newTotal)")
 }
 ```
 
-**最佳实践**：
-- 使用 `[weak self]` 避免 retain cycle
-- Observations AsyncSequence 适合非 SwiftUI 上下文（Service 层、后台同步）
-- 批量处理同步变更，在下一个 await 时发出一致快照，提升性能
-- SwiftUI View 内继续使用 `@State` + `@Observable`，无需手动订阅
-
-### 环境注入
+## SwiftData
 ```swift
-@Environment(\.modelContext) private var context
-@Environment(\.colorScheme) private var colorScheme
-@Environment(\.horizontalSizeClass) private var sizeClass
-```
+@Model
+final class Item {
+    @Attribute(.unique) var id: String   // 唯一约束
+    var title: String
+    var timestamp: Date
+    var isCompleted: Bool = false
+    var category: Category?
 
-## SwiftData（推荐持久化方案）
-```swift
-import SwiftData
+    init(title: String) {
+        self.id = UUID().uuidString
+        self.title = title
+        self.timestamp = .now
+    }
+}
 
 @Model
-class Item {
-    var timestamp: Date
-    var title: String
-    var isCompleted: Bool = false
-    
-    init(timestamp: Date, title: String) {
-        self.timestamp = timestamp
-        self.title = title
-    }
+final class Category {
+    @Attribute(.unique) var name: String
+    @Relationship(deleteRule: .cascade, inverse: \Item.category)
+    var items: [Item] = []
+    init(name: String) { self.name = name }
 }
 
-// App 入口注入容器
-@main
-struct MyApp: App {
+// App 入口
+@main struct MyApp: App {
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-        .modelContainer(for: Item.self)
+        WindowGroup { ContentView() }
+            .modelContainer(for: [Item.self, Category.self])
     }
 }
-```
 
-在 View 中使用：
-```swift
-struct ItemListView: View {
-    @Query(sort: \Item.timestamp, order: .reverse) private var items: [Item]
-    @Environment(\.modelContext) private var context
-    
-    var body: some View {
-        List(items) { item in
-            Text(item.title)
-        }
-    }
-    
-    func addItem(title: String) {
-        let item = Item(timestamp: .now, title: title)
-        context.insert(item)
-    }
+// View 中使用
+@Query(sort: \Item.timestamp, order: .reverse) private var items: [Item]
+@Environment(\.modelContext) private var context
+
+func addItem(_ title: String) {
+    context.insert(Item(title: title))
 }
-```
 
-**SwiftData Preview 支持**：
-```swift
+// Preview
 #Preview {
     ItemListView()
         .modelContainer(for: Item.self, inMemory: true)
 }
 ```
 
-## Apple Intelligence & Foundation Models（核心增强）
-**Foundation Models** 提供 on-device 30 亿参数大语言模型（隐私优先、离线可用、无需 API Key）。2026 年 2 月更新提升了 instruction-following 和 tool-calling 能力。
+**SwiftData iOS 26 新特性**：支持模型继承（`@Model class BusinessTrip: Trip {}`）。
 
-### Context Management（iOS 26.4+）
+## Apple Intelligence & Foundation Models
+on-device 30 亿参数 LLM，无需 API Key，隐私安全。
+
+### Context Management
 ```swift
-import FoundationModels
-
 let model = SystemLanguageModel()
-let contextSize = model.contextSize          // 当前可用 context 大小（避免硬编码 4096）
+let contextSize = model.contextSize
 let tokenCount = try await model.tokenCount(for: prompt)
-
-// 动态管理上下文，避免超出限制
-if tokenCount < contextSize {
-    let result = try await session.respond(to: prompt)
-}
+guard tokenCount < contextSize else { /* 截断或分块 */ return }
 ```
 
-### 基础 Session + 简单响应
-```swift
-import FoundationModels
-
-struct AIAssistantView: View {
-    @State private var session = LanguageModelSession()
-    @State private var prompt = ""
-    @State private var response = ""
-    @State private var isGenerating = false
-    
-    var body: some View {
-        VStack {
-            TextEditor(text: $prompt)
-                .frame(height: 100)
-                .border(.secondary)
-            
-            Button("Generate") {
-                Task { await generate() }
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(isGenerating)
-            
-            if isGenerating {
-                ProgressView()
-            } else {
-                ScrollView {
-                    Text(response)
-                        .textSelection(.enabled)
-                }
-            }
-        }
-        .padding()
-        .task { await session.prewarm() }   // 强烈推荐预热，减少首字延迟
-    }
-    
-    private func generate() async {
-        isGenerating = true
-        do {
-            let result = try await session.respond(to: prompt)
-            response = result
-        } catch {
-            response = "Error: \(error.localizedDescription)"
-        }
-        isGenerating = false
-    }
-}
-```
-
-### Streaming 响应（推荐用于长文本，结合 Liquid Glass UI）
+### Streaming + Liquid Glass UI
 ```swift
 struct AIChatView: View {
     @State private var session = LanguageModelSession()
-    @State private var prompt = ""
     @State private var response = ""
     @State private var isGenerating = false
-    
+
     var body: some View {
         VStack {
             ScrollView {
-                Text(response)
-                    .textSelection(.enabled)
+                Text(response).textSelection(.enabled)
             }
-            .background(.ultraThinMaterial)   // Liquid Glass 效果
+            .background(.ultraThinMaterial)
             .clipShape(.rect(cornerRadius: 20, style: .continuous))
-            
+
             HStack {
                 TextField("Ask AI...", text: $prompt)
                     .textFieldStyle(.roundedBorder)
-                Button("Send") { Task { await generateStreaming() } }
-                    .buttonStyle(.borderedProminent)
+                Button("Send") { Task { await stream() } }
                     .disabled(isGenerating)
             }
         }
-        .padding()
         .task { await session.prewarm() }
     }
-    
-    private func generateStreaming() async {
-        isGenerating = true
-        response = ""
+
+    private func stream() async {
+        isGenerating = true; response = ""
         do {
-            let stream = try await session.streamResponse(to: prompt)
-            for try await chunk in stream {
-                withAnimation(.easeIn(duration: 0.1)) {
-                    response += chunk
-                }
+            for try await chunk in session.streamResponse(to: prompt) {
+                withAnimation(.easeIn(duration: 0.1)) { response += chunk }
             }
-        } catch {
-            response = "Error: \(error.localizedDescription)"
-        }
+        } catch { response = "Error: \(error.localizedDescription)" }
         isGenerating = false
     }
 }
 ```
 
-### Guided Generation + @Generable（强类型输出，推荐）
+### Guided Generation（强类型输出）
 ```swift
-import FoundationModels
-
 @Generable
 struct TripSuggestion {
     var title: String
     var landmarks: [String]
-    @Guide(description: "简短摘要，放最后以提升质量") var summary: String
+    @Guide(description: "简短摘要") var summary: String  // 摘要放最后提升质量
 }
 
-// 使用
-let prompt = "Suggest a 3-day trip to Japan focusing on culture."
 let result = try await session.respond(to: prompt, generating: TripSuggestion.self)
-print(result.title)       // 类型安全
-print(result.landmarks)   // [String] 数组
-print(result.summary)     // 自动生成的摘要
 ```
 
-### Tool Calling（让模型调用 App 功能）
+### Tool Calling
 ```swift
-import FoundationModels
-import AppIntents
-
-// 定义工具（基于 App Intents）
-struct SearchItemTool: AppIntent {
-    static var title: LocalizedStringResource = "Search Items"
-    
-    @Parameter(title: "Query")
-    var query: String
-    
-    func perform() async throws -> some IntentResult {
-        // 搜索逻辑
-        return .result(value: "Found items matching: \(query)")
-    }
-}
-
-// 在 Session 中注册工具
 let session = LanguageModelSession(tools: [SearchItemTool.self])
-let result = try await session.respond(to: "Find my recent photos from Tokyo")
+let result = try await session.respond(to: "Find my Tokyo photos")
 ```
 
-**Foundation Models 最佳实践（WWDC25/26）**：
-- 始终调用 `prewarm()` 提前加载模型，减少首次响应延迟
-- 使用 `tokenCount` + `contextSize` 动态管理上下文，避免超出限制
-- 使用 Streaming + SwiftUI Animation 隐藏生成等待时间
-- `@Generable` 属性声明顺序影响生成质量（摘要等总结性字段放最后）
-- 仅包含需要显示的属性，避免浪费 token
-- 输入前清理数据，避免触发安全护栏
-- 处理 `isResponding` 状态，提供良好的加载体验
-- 结合 Tool Calling 让模型调用你的 App Intents
+**最佳实践**：始终 `prewarm()`；`tokenCount + contextSize` 动态管理上下文；属性顺序影响质量；摘要类字段放最后。
 
-## App Intents（与 Siri / Apple Intelligence 深度集成）
-暴露 App 功能给系统（Siri、Spotlight、Widgets、Writing Tools、Apple Intelligence 等）。
-
+## App Intents（Siri / Spotlight / Apple Intelligence）
 ```swift
-import AppIntents
-
+// 基础 Intent
 struct AddItemIntent: AppIntent {
-    static var title: LocalizedStringResource = "Add New Item"
-    static var description: IntentDescription = "Adds a new item to your list"
-    
-    @Parameter(title: "Title")
-    var title: String
-    
-    @Parameter(title: "Priority", default: .medium)
-    var priority: ItemPriority
-    
+    static var title: LocalizedStringResource = "Add Item"
+    @Parameter(title: "Title") var title: String
+
     func perform() async throws -> some IntentResult {
-        // 执行逻辑
         return .result(value: "Added: \(title)")
     }
 }
 
-// 自定义枚举参数
-enum ItemPriority: String, AppEnum {
-    case low, medium, high
-    
-    static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Priority")
-    static var caseDisplayRepresentations: [Self: DisplayRepresentation] = [
-        .low: "Low",
-        .medium: "Medium",
-        .high: "High"
-    ]
+// AppEntity（让系统理解 App 数据）
+struct TrailEntity: AppEntity {
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Trail"
+    static var defaultQuery = TrailEntityQuery()
+    var id: String
+    var name: String
+    var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(title: "\(name)")
+    }
 }
+
+struct TrailEntityQuery: EntityQuery {
+    func entities(for identifiers: [String]) async throws -> [TrailEntity] { [] }
+    func suggestedEntities() async throws -> [TrailEntity] { [] }
+}
+
+// App Shortcuts（Siri 语音触发）
+struct MyShortcuts: AppShortcutsProvider {
+    static var appShortcuts: [AppShortcut] {
+        AppShortcut(intent: AddItemIntent(), phrases: ["Add item to \(.applicationName)"])
+    }
+}
+
+// Assistant Schemas（Apple Intelligence 深度集成）
+@AppIntent(schema: .system.search)
+struct SearchIntent: AppIntent { ... }
+
+// Spotlight 索引
+CSSearchableIndex.default().indexAppEntities(entities)
 ```
 
-## 导航与布局（NavigationStack + TabView）
-
-### 基于值的导航（推荐）
+## WidgetKit（Widget + Live Activities）
 ```swift
-struct ContentView: View {
-    @State private var path = NavigationPath()
-    
+// Timeline Provider
+struct GameStatusProvider: TimelineProvider {
+    func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
+        let entry = GameStatusEntry(date: .now, status: "Active")
+        let next = Calendar.current.date(byAdding: .minute, value: 15, to: .now)!
+        completion(Timeline(entries: [entry], policy: .after(next)))
+    }
+    func placeholder(in context: Context) -> GameStatusEntry { GameStatusEntry(date: .now, status: "—") }
+    func getSnapshot(in context: Context, completion: @escaping (GameStatusEntry) -> Void) {
+        completion(GameStatusEntry(date: .now, status: "Active"))
+    }
+}
+
+// 交互式 Widget（iOS 17+）
+Button(intent: SuperChargeIntent()) {
+    Image(systemName: "bolt.fill")
+}
+
+// Smart Stack 相关性
+TimelineEntryRelevance(score: 10, duration: 3600)
+
+// 刷新 Widget
+WidgetCenter.shared.reloadTimelines(ofKind: "GameStatus")
+```
+
+## 导航（NavigationStack + Zoom 过渡）
+```swift
+// Zoom 过渡（iOS 18+，列表→详情的丝滑动画）
+@Namespace private var ns
+
+struct ItemList: View {
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack {
             List(items) { item in
                 NavigationLink(value: item) {
                     ItemRow(item: item)
+                        .matchedTransitionSource(id: item.id, in: ns)
                 }
             }
             .navigationDestination(for: Item.self) { item in
                 DetailView(item: item)
+                    .navigationTransition(.zoom(sourceID: item.id, in: ns))
             }
-            .navigationTitle("Items")
         }
     }
 }
 ```
 
-### TabView（iOS 26 增强）
+## 搜索界面
 ```swift
-TabView {
-    Tab("Home", systemImage: "house") {
-        HomeView()
-    }
-    Tab("Search", systemImage: "magnifyingglass") {
-        SearchView()
-    }
-    Tab("Settings", systemImage: "gear") {
-        SettingsView()
-    }
+@State private var searchText = ""
+@State private var suggestions = ["Swift", "SwiftUI", "Xcode"]
+
+NavigationStack {
+    List(filteredItems) { item in Text(item.name) }
+        .searchable(text: $searchText, placement: .navigationBarDrawer, prompt: "Search items") {
+            ForEach(suggestions, id: \.self) { s in
+                Text(s).searchCompletion(s)
+            }
+        }
+        .navigationTitle("Items")
+}
+
+var filteredItems: [Item] {
+    searchText.isEmpty ? items : items.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
 }
 ```
 
-### 响应式布局
+## 拖拽（Drag & Drop + Transferable）
 ```swift
-struct AdaptiveView: View {
-    @Environment(\.horizontalSizeClass) private var sizeClass
-    
+// Transferable 协议
+extension Contact: Transferable {
+    static var transferRepresentation: some TransferRepresentation {
+        CodableRepresentation(contentType: .contact)
+        ProxyRepresentation(exportingAs: .plainText) { "\($0.name)" }
+    }
+}
+
+// 拖拽源
+ContactRow(contact: contact).draggable(contact)
+
+// 拖放目标
+List { ... }
+    .dropDestination(for: Contact.self) { contacts, _ in
+        self.contacts.append(contentsOf: contacts)
+        return true
+    }
+```
+
+## 手势
+```swift
+// @GestureState 临时状态
+@GestureState private var isDetecting = false
+
+let longPress = LongPressGesture(minimumDuration: 1)
+    .updating($isDetecting) { state, gestureState, _ in gestureState = state }
+    .onEnded { _ in print("Long press ended") }
+
+// 拖拽手势
+@State private var offset = CGSize.zero
+let drag = DragGesture()
+    .onChanged { value in offset = value.translation }
+    .onEnded { _ in withAnimation { offset = .zero } }
+
+// 手势组合
+view.gesture(longPress.simultaneously(with: drag))
+```
+
+## 动画
+```swift
+// 弹簧动画
+withAnimation(.spring(duration: 0.5, bounce: 0.3)) { isExpanded.toggle() }
+
+// 多阶段 Phase Animator
+Text("Hello").phaseAnimator([false, true]) { content, phase in
+    content.scaleEffect(phase ? 1.2 : 1.0).opacity(phase ? 1.0 : 0.8)
+}
+
+// 共享元素 matchedGeometryEffect
+@Namespace private var animation
+Image(item.image).matchedGeometryEffect(id: item.id, in: animation)
+```
+
+## HealthKit
+```swift
+let healthStore = HKHealthStore()
+
+// 请求权限
+let readTypes: Set<HKSampleType> = [
+    HKObjectType.quantityType(forIdentifier: .heartRate)!,
+    HKObjectType.quantityType(forIdentifier: .stepCount)!
+]
+try await healthStore.requestAuthorization(toShare: [], read: readTypes)
+
+// 查询数据
+let query = HKSampleQuery(
+    sampleType: HKObjectType.quantityType(forIdentifier: .heartRate)!,
+    predicate: nil, limit: 100,
+    sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]
+) { _, samples, _ in
+    DispatchQueue.main.async {
+        guard let samples = samples as? [HKQuantitySample] else { return }
+        self.heartRates = samples.map { $0.quantity.doubleValue(for: .init(from: "count/min")) }
+    }
+}
+healthStore.execute(query)
+
+// 后台交付（数据变化时唤醒 App）
+healthStore.enableBackgroundDelivery(for: heartRateType, frequency: .immediate) { _, _ in }
+```
+
+## CloudKit
+```swift
+let container = CKContainer.default()
+let db = container.privateCloudDatabase
+
+// 保存记录
+let record = CKRecord(recordType: "TodoItem")
+record["title"] = "Buy groceries"
+record["dueDate"] = Date()
+// 加密字段（iOS 15+）
+record.encryptedValues["sensitiveNote"] = "Private content"
+
+db.save(record) { _, error in
+    if let error { print("Save error: \(error)") }
+}
+
+// 查询
+let predicate = NSPredicate(value: true)
+let query = CKQuery(recordType: "TodoItem", predicate: predicate)
+let (results, _) = try await db.records(matching: query)
+
+// CloudKit + SwiftData 同步：.modelContainer 设置 cloudKitContainerIdentifier
+.modelContainer(for: Item.self, configurations: [
+    ModelConfiguration(cloudKitDatabase: .automatic)
+])
+```
+
+**注意**：Schema 一旦部署到生产只能新增，不能删除字段；加密字段不支持 CKAsset。
+
+## Sign in with Apple
+```swift
+import AuthenticationServices
+
+struct SignInView: View {
     var body: some View {
-        if sizeClass == .compact {
-            VStack { content }
-        } else {
-            HStack { content }
+        SignInWithAppleButton(.signIn) { request in
+            request.requestedScopes = [.fullName, .email]
+        } onCompletion: { result in
+            switch result {
+            case .success(let auth):
+                if let credential = auth.credential as? ASAuthorizationAppleIDCredential {
+                    let userID = credential.user
+                    let email = credential.email
+                    // 存入 Keychain
+                }
+            case .failure(let error):
+                print("Auth failed: \(error)")
+            }
         }
+        .signInWithAppleButtonStyle(.black)
+        .frame(height: 50)
     }
 }
 ```
 
-## SwiftUI 新特性（iOS 26 / WWDC25）
-
-### WebView（原生网页嵌入）
+## Push Notifications
 ```swift
+// 请求权限
+let center = UNUserNotificationCenter.current()
+try await center.requestAuthorization(options: [.alert, .sound, .badge])
+
+// 本地通知
+let content = UNMutableNotificationContent()
+content.title = "Reminder"
+content.body = "Time to check in!"
+content.sound = .default
+
+let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 60, repeats: false)
+let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+try await center.add(request)
+
+// 前台展示
+func userNotificationCenter(_ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler handler: @escaping (UNNotificationPresentationOptions) -> Void) {
+    handler([.banner, .sound, .badge])
+}
+```
+
+## Apple Pay（PassKit）
+```swift
+import PassKit
+
+// 检查是否支持
+guard PKPaymentAuthorizationController.canMakePayments() else { return }
+
+let request = PKPaymentRequest()
+request.merchantIdentifier = "merchant.com.example.app"
+request.supportedNetworks = [.visa, .masterCard, .amex]
+request.merchantCapabilities = .capability3DS
+request.countryCode = "CN"
+request.currencyCode = "CNY"
+request.paymentSummaryItems = [
+    PKPaymentSummaryItem(label: "Pro Subscription", amount: NSDecimalNumber(string: "68.00"))
+]
+
+let controller = PKPaymentAuthorizationController(paymentRequest: request)
+controller.delegate = self
+controller.present()
+
+// 授权完成
+func paymentAuthorizationController(_ controller: PKPaymentAuthorizationController,
+    didAuthorizePayment payment: PKPayment,
+    handler completion: @escaping (PKPaymentAuthorizationResult) -> Void) {
+    // 发送 payment.token 到服务器验证
+    completion(PKPaymentAuthorizationResult(status: .success))
+}
+```
+
+## NaturalLanguage
+```swift
+import NaturalLanguage
+
+// 语言识别
+let recognizer = NLLanguageRecognizer()
+recognizer.processString("Hello, SwiftUI world!")
+print(recognizer.dominantLanguage?.rawValue ?? "unknown")  // "en"
+
+// 词性标注
+let tagger = NLTagger(tagSchemes: [.lexicalClass])
+tagger.string = "Apple ships Swift 6."
+tagger.enumerateTags(in: tagger.string!.startIndex..., unit: .word,
+    scheme: .lexicalClass, options: [.omitPunctuation, .omitWhitespace]) { tag, range in
+    print("\(tagger.string![range]): \(tag?.rawValue ?? "")")
+    return true
+}
+
+// 命名实体识别
+let nerTagger = NLTagger(tagSchemes: [.nameType])
+// 识别 .personalName / .placeName / .organizationName
+
+// 语义相似度（词嵌入）
+if let embedding = NLEmbedding.wordEmbedding(for: .english) {
+    let distance = embedding.distance(between: "bicycle", and: "motorcycle")
+    // distance 越小越相似
+}
+```
+
+## CoreMotion
+```swift
+import CoreMotion
+
+class MotionManager: ObservableObject {
+    private let manager = CMMotionManager()
+    @Published var pitch: Double = 0
+    @Published var roll: Double = 0
+
+    func start() {
+        guard manager.isDeviceMotionAvailable else { return }
+        manager.deviceMotionUpdateInterval = 1.0 / 60.0
+        manager.startDeviceMotionUpdates(to: .main) { [weak self] data, _ in
+            guard let data else { return }
+            self?.pitch = data.attitude.pitch
+            self?.roll = data.attitude.roll
+        }
+    }
+
+    func stop() { manager.stopDeviceMotionUpdates() }
+}
+
+// 计步器
+let pedometer = CMPedometer()
+if CMPedometer.isStepCountingAvailable() {
+    pedometer.startUpdates(from: .now) { data, _ in
+        guard let data else { return }
+        print("Steps: \(data.numberOfSteps)")
+    }
+}
+```
+**注意**：visionOS 中 motion 数据只在 immersive space 开启时可用；用完立即停止以节省电量。
+
+## CoreBluetooth（BLE）
+```swift
+import CoreBluetooth
+
+class BLEManager: NSObject, CBCentralManagerDelegate, ObservableObject {
+    private var centralManager: CBCentralManager!
+    @Published var discoveredDevices: [CBPeripheral] = []
+
+    override init() {
+        super.init()
+        centralManager = CBCentralManager(delegate: self, queue: nil)
+    }
+
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        if central.state == .poweredOn {
+            central.scanForPeripherals(withServices: [myServiceUUID],
+                options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
+        }
+    }
+
+    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
+        advertisementData: [String: Any], rssi RSSI: NSNumber) {
+        guard RSSI.intValue >= -50 else { return }  // 信号强度过滤
+        discoveredDevices.append(peripheral)
+        central.connect(peripheral)
+    }
+}
+
+// 外设（Peripheral）模式
+let characteristic = CBMutableCharacteristic(
+    type: myCharacteristicUUID,
+    properties: [.notify, .writeWithoutResponse],
+    value: nil, permissions: [.readable, .writeable]
+)
+```
+
+## RealityKit（AR / visionOS）
+```swift
+import RealityKit
 import SwiftUI
 
-struct WebContentView: View {
+// RealityView（iOS 18+ / visionOS）
+struct ARSceneView: View {
+    @State private var entity: ModelEntity?
+
     var body: some View {
-        WebView(url: URL(string: "https://developer.apple.com")!)
-            .navigationTitle("Apple Developer")
+        RealityView { content in
+            // 加载 3D 模型
+            if let model = try? await ModelEntity(named: "robot.usdz") {
+                model.generateCollisionShapes(recursive: true)
+                content.add(model)
+                entity = model
+            }
+        } update: { content in
+            entity?.transform.rotation = simd_quatf(angle: .pi, axis: [0, 1, 0])
+        }
+        .gesture(TapGesture().targetedToAnyEntity().onEnded { _ in
+            entity?.model?.materials = [SimpleMaterial(color: .orange, isMetallic: true)]
+        })
+    }
+}
+
+// ECS（Entity Component System）
+struct RotationComponent: Component { var speed: Float = 1.0 }
+
+class RotationSystem: System {
+    static let query = EntityQuery(where: .has(RotationComponent.self))
+    func update(context: SceneUpdateContext) {
+        for entity in context.entities(matching: Self.query, updatingSystemWhen: .rendering) {
+            let speed = entity.components[RotationComponent.self]?.speed ?? 1
+            entity.setOrientation(
+                simd_quatf(angle: speed * Float(context.deltaTime), axis: [0,1,0]),
+                relativeTo: entity)
+        }
+    }
+}
+
+// PBR 材质
+var material = PhysicallyBasedMaterial()
+material.baseColor.tint = .systemBlue
+material.roughness = .init(floatLiteral: 0.3)
+material.metallic = .init(floatLiteral: 0.8)
+```
+
+## WebKit（WKWebView 集成）
+```swift
+import WebKit
+import SwiftUI
+
+struct WebView: UIViewRepresentable {
+    let url: URL
+    var onNavigate: ((URL) -> Void)?
+
+    func makeUIView(context: Context) -> WKWebView {
+        let config = WKWebViewConfiguration()
+        config.allowsInlineMediaPlayback = true
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.navigationDelegate = context.coordinator
+        return webView
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        webView.load(URLRequest(url: url))
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    class Coordinator: NSObject, WKNavigationDelegate {
+        let parent: WebView
+        init(_ parent: WebView) { self.parent = parent }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            if let url = webView.url { parent.onNavigate?(url) }
+        }
     }
 }
 ```
 
-### Rich TextEditor（富文本编辑）
+## StoreKit 2（内购 / 订阅）
 ```swift
-struct RichEditorView: View {
-    @State private var text = AttributedString("Hello, **SwiftUI**!")
-    
-    var body: some View {
-        RichTextEditor($text)
-            .padding()
+import StoreKit
+
+// 加载商品
+let products = try await Product.products(for: ["com.app.pro.monthly"])
+
+// 购买
+let result = try await products.first?.purchase()
+switch result {
+case .success(let verification):
+    let transaction = try verification.payloadValue
+    await transaction.finish()
+case .userCancelled, .pending: break
+default: break
+}
+
+// 验证当前权益
+for await result in Transaction.currentEntitlements {
+    if case .verified(let transaction) = result {
+        // 激活对应功能
+        print("Entitled: \(transaction.productID)")
     }
 }
+
+// 监听交易更新
+for await result in Transaction.updates {
+    if case .verified(let transaction) = result {
+        await transaction.finish()
+    }
+}
+
+// 恢复购买
+try await AppStore.sync()
 ```
 
-### Section Index Titles（List 索引）
+## URLSession（现代网络请求）
 ```swift
-List {
-    ForEach(sectionedItems) { section in
-        Section(section.title) {
-            ForEach(section.items) { item in
-                Text(item.name)
+// async/await 方式（推荐）
+func fetchData<T: Decodable>(from url: URL, as type: T.Type) async throws -> T {
+    let (data, response) = try await URLSession.shared.data(from: url)
+    guard let httpResponse = response as? HTTPURLResponse,
+          (200...299).contains(httpResponse.statusCode) else {
+        throw URLError(.badServerResponse)
+    }
+    return try JSONDecoder().decode(T.self, from: data)
+}
+
+// 带进度的下载
+private lazy var session: URLSession = {
+    let config = URLSessionConfiguration.default
+    config.waitsForConnectivity = true
+    return URLSession(configuration: config, delegate: self, delegateQueue: nil)
+}()
+
+// 后台下载
+let bgConfig = URLSessionConfiguration.background(withIdentifier: "com.app.download")
+bgConfig.sessionSendsLaunchEvents = true
+let bgSession = URLSession(configuration: bgConfig, delegate: self, delegateQueue: nil)
+```
+
+## CoreLocation + MapKit
+```swift
+// CoreLocation（async 方式，iOS 17+）
+@MainActor class LocationManager: ObservableObject {
+    @Published var location: CLLocation?
+    private let manager = CLLocationManager()
+
+    func start() {
+        manager.requestWhenInUseAuthorization()
+        Task {
+            for try await update in CLLocationUpdate.liveUpdates() {
+                location = update.location
             }
         }
     }
 }
-.listStyle(.plain)
-.sectionIndexTitles(sectionedItems.map(\.title))
-```
 
-### Spatial Layout（visionOS）
-```swift
-// visionOS windows、volumes、immersive spaces
-WindowGroup {
-    ContentView()
-}
-.windowStyle(.volumetric)
-
-ImmersiveSpace(id: "immersive") {
-    ImmersiveView()
-}
-```
-
-## 动画与过渡效果
-```swift
-// 基础动画
-withAnimation(.spring(duration: 0.5, bounce: 0.3)) {
-    isExpanded.toggle()
-}
-
-// 匹配几何效果（共享元素过渡）
-@Namespace private var animation
-
-Image(item.image)
-    .matchedGeometryEffect(id: item.id, in: animation)
-
-// Phase Animator（多阶段动画）
-Text("Hello")
-    .phaseAnimator([false, true]) { content, phase in
-        content
-            .scaleEffect(phase ? 1.2 : 1.0)
-            .opacity(phase ? 1.0 : 0.8)
-    }
-```
-
-## 性能优化（Xcode 26 新工具）
-
-### SwiftUI Performance Instrument（Xcode 26 新增）
-- **View Body Updates**：可视化每个 View 的 body 调用次数和频率
-- **Timeline**：主线程工作分析、长更新检测
-- List 性能显著提升（无需代码变更即可快 16 倍）
-- 帮助定位不必要的重绘和频繁更新
-
-### 最佳实践
-```swift
-// 避免：在 body 中执行耗时操作
-// 推荐：使用 .task {} modifier
-struct DataView: View {
-    @State private var data: [Item] = []
-    
+// SwiftUI Map
+import MapKit
+struct MapView: View {
     var body: some View {
-        List(data) { item in
-            Text(item.title)
-        }
-        .task {
-            data = await fetchData()
-        }
-        .refreshable {
-            data = await fetchData()
-        }
+        Map(initialPosition: .region(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 39.9, longitude: 116.4),
+            span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+        )))
+    }
+}
+```
+
+## 性能优化（Xcode 26）
+```swift
+// LazyVStack：仅在 100+ 元素且 profiling 证明需要时使用
+ScrollView {
+    LazyVStack {
+        ForEach(largeData) { item in ItemRow(item: item) }
     }
 }
 
-// 避免：大列表中复杂的内联 View
-// 推荐：提取为独立子 View（SwiftUI 自动优化更新粒度）
+// 提取子 View（SwiftUI 细粒度更新）
 struct ItemRow: View {
-    let item: Item
+    let item: Item  // let 防止不必要更新
     var body: some View {
         HStack {
             Text(item.title)
@@ -627,53 +827,40 @@ struct ItemRow: View {
         }
     }
 }
-```
 
-### 并发最佳实践（Swift 6.2）
-```swift
-// Actor 隔离（线程安全）
-actor DataService {
+// .task 替代 onAppear
+.task { data = await fetchData() }
+.refreshable { data = await fetchData() }
+
+// Actor（线程安全缓存）
+actor DataCache {
     private var cache: [String: Data] = [:]
-    
-    func fetch(url: URL) async throws -> Data {
-        if let cached = cache[url.absoluteString] { return cached }
-        let (data, _) = try await URLSession.shared.data(from: url)
-        cache[url.absoluteString] = data
-        return data
-    }
-}
-
-// MainActor（UI 更新）
-@MainActor
-func updateUI(with result: String) {
-    self.response = result
+    func get(_ key: String) -> Data? { cache[key] }
+    func set(_ key: String, value: Data) { cache[key] = value }
 }
 ```
 
-## UIKit 互操作（必要时）
+**Xcode 26 SwiftUI Performance Instrument**：打开 Instruments → SwiftUI 模板 → 查看 View Body Updates 和 Timeline，定位频繁重绘。
+
+## UIKit 互操作
 ```swift
 struct CameraView: UIViewControllerRepresentable {
     @Binding var image: UIImage?
-    
+
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.sourceType = .camera
         picker.delegate = context.coordinator
         return picker
     }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
+    func updateUIViewController(_ vc: UIImagePickerController, context: Context) {}
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
     class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
         let parent: CameraView
-        init(_ parent: CameraView) { self.parent = parent }
-        
+        init(_ p: CameraView) { self.parent = p }
         func imagePickerController(_ picker: UIImagePickerController,
-                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
             parent.image = info[.originalImage] as? UIImage
             picker.dismiss(animated: true)
         }
@@ -681,67 +868,87 @@ struct CameraView: UIViewControllerRepresentable {
 }
 ```
 
-**推荐**：新项目 95%+ 用 SwiftUI，仅相机、复杂手势、旧组件等少数场景用 UIKit。
+## SwiftUI 新特性（iOS 26 / WWDC25）
+```swift
+// WebView（原生，无需 UIViewRepresentable）
+WebView(url: URL(string: "https://developer.apple.com")!)
 
-## 常见坑点与最佳实践（2026 最终版）
-1. **Liquid Glass**：优先 `.ultraThinMaterial` + `.glassEffect()`，避免纯色背景
-2. **Foundation Models**：必须 prewarm + 管理 `contextSize` / `tokenCount`；属性顺序影响生成质量
-3. **Observations AsyncSequence**：适合非 SwiftUI 上下文或批量更新；使用 `[weak self]` 防 retain cycle
-4. **SwiftUI 性能**：用 Xcode 26 SwiftUI Performance Instrument 检查 View Body Updates
-5. **SwiftData**：避免在 List 中直接用复杂 predicate（性能）；Preview 用 `inMemory: true`
-6. **HIG**：遵循 Liquid Glass、Dynamic Type、Dark Mode、Accessibility、Generative AI 指南
-7. **多平台适配**：使用 `horizontalSizeClass` / `#if os()` / spatial APIs（visionOS）
-8. **不要在 body 中执行耗时操作** → 用 `.task {}` 或 `.refreshable`
-9. **@Observable 类保持轻量** → 复杂逻辑放 Service / Actor
-10. **WebView / Rich TextEditor**：iOS 26 原生支持，无需第三方库
+// Rich TextEditor
+@State private var text = AttributedString("Hello **SwiftUI**!")
+RichTextEditor($text).padding()
+
+// Section Index Titles
+List { ... }.sectionIndexTitles(sections.map(\.title))
+
+// visionOS Spatial Layout
+WindowGroup { ContentView() }.windowStyle(.volumetric)
+ImmersiveSpace(id: "main") { ImmersiveView() }
+```
+
+## Xcode 工具
+**DocC 注释**：
+```swift
+/// 简短描述。
+///
+/// 详细说明。
+/// - Parameters:
+///   - input: 输入说明
+/// - Returns: 返回值说明
+/// - Throws: 错误类型
+func process(_ input: String) throws -> Result
+```
+
+**Xcode Cloud**：在 Xcode → Product → Xcode Cloud 配置 CI/CD 工作流（Build / Test / Archive），支持 PR 触发、多设备测试、TestFlight 自动分发。
 
 ## 测试（Swift Testing）
 ```swift
 import Testing
 @testable import MyApp
 
-@Test("Item creation sets correct defaults")
-func itemCreation() async throws {
-    let item = Item(timestamp: .now, title: "Test")
-    #expect(item.title == "Test")
+@Test("创建 Item 默认值正确")
+func itemDefaults() {
+    let item = Item(title: "Test")
     #expect(item.isCompleted == false)
-}
-
-@Test("Counter increments correctly")
-func counterIncrement() {
-    let vm = CounterViewModel()
-    vm.increment()
-    #expect(vm.count == 1)
+    #expect(!item.id.isEmpty)
 }
 
 // 参数化测试
-@Test(arguments: ["Hello", "World", "Swift"])
+@Test(arguments: ["Swift", "SwiftUI", "Xcode"])
 func titleNotEmpty(title: String) {
-    let item = Item(timestamp: .now, title: title)
-    #expect(!item.title.isEmpty)
+    #expect(!Item(title: title).title.isEmpty)
+}
+
+// async 测试
+@Test func fetchData() async throws {
+    let data = try await DataService().fetch(url: testURL)
+    #expect(!data.isEmpty)
 }
 ```
 
-## Xcode 26 Coding Intelligence
-Xcode 26 内置 AI 编码助手：
-- **代码补全**：基于上下文的智能补全（本地模型 + Apple 服务器）
-- **代码重构**：自然语言描述重构意图
-- **错误修复**：自动建议修复方案
-- **文档生成**：自动生成符合 DocC 规范的注释
+## 常见坑点（2026 完整版）
+1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
+2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
+3. **SwiftData**：Schema 生产环境只能新增字段；`@Attribute(.unique)` 防重复；Preview 用 `inMemory: true`
+4. **App Intents**：`AppShortcuts` 短语必须包含 `\(.applicationName)`；AssistantSchemas 需精确匹配 schema
+5. **HealthKit**：每次启动重新检查权限状态；后台交付需同时配置 Background Modes
+6. **CloudKit**：加密字段不支持 CKAsset 和查询；Schema 部署前在 Dashboard 确认
+7. **CoreBluetooth**：RSSI >= -50 过滤无效连接；数据分块传输加 "EOM" 标记
+8. **RealityKit**：SceneKit 已软废弃；使用 ECS 架构管理复杂场景；visionOS 移世界不移相机
+9. **CoreMotion**：用完立即 `stop()`；visionOS 需在 immersive space 内才能获取数据
+10. **StoreKit 2**：监听 `Transaction.updates` 处理服务端推送；`AppStore.sync()` 恢复购买
+11. **性能**：先 profile 再优化；标准 Stack 优先，100+ 元素再用 LazyStack
+12. **并发**：UI 更新必须在 `@MainActor`；共享状态用 `actor` 隔离
 
-搭配本 SKILL.md，Xcode Coding Intelligence 可生成更符合最新 API 的代码。
-
-## 持续更新提示
-本文档基于 2026 年 4 月 Apple 官方文档（iOS 26、Xcode 26、Foundation Models 2 月更新、WWDC25/26）。  
-核心资源：
-- What's New in SwiftUI：https://developer.apple.com/swiftui/whats-new/
-- Foundation Models：https://developer.apple.com/documentation/foundationmodels
+## 持续更新资源
 - SwiftUI：https://developer.apple.com/documentation/swiftui
-- Liquid Glass & HIG：https://developer.apple.com/design/human-interface-guidelines
-- HIG Generative AI：https://developer.apple.com/design/human-interface-guidelines/generative-ai
+- Foundation Models：https://developer.apple.com/documentation/foundationmodels
+- HIG + Liquid Glass：https://developer.apple.com/design/human-interface-guidelines
 - App Intents：https://developer.apple.com/documentation/appintents
 - SwiftData：https://developer.apple.com/documentation/swiftdata
+- WidgetKit：https://developer.apple.com/documentation/widgetkit
+- RealityKit：https://developer.apple.com/documentation/realitykit
+- StoreKit 2：https://developer.apple.com/documentation/storekit
 - Swift Testing：https://developer.apple.com/documentation/testing
-- Xcode 26 Release Notes：https://developer.apple.com/documentation/xcode-release-notes
+- Xcode Cloud：https://developer.apple.com/documentation/xcode/xcode-cloud
 
-**编辑规则**：仅修改此 SKILL.md 文件 → 运行 build 脚本生成各 AI 工具配置。
+**编辑规则**：仅修改此 SKILL.md → 运行 build 脚本生成各 AI 工具配置。
