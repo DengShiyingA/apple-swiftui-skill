@@ -3628,6 +3628,209 @@ Image("pencil")
 // glassEffectID + glassEffectTransition 用于切换时的变形动画
 ```
 
+
+## 自定义字体
+```swift
+// 1. 将 .ttf/.otf 文件添加到项目
+// 2. Info.plist 添加 UIAppFonts（Fonts provided by application）
+// 3. 使用
+Text("Hello").font(.custom("MyFont-Bold", size: 24))
+Text("Body").font(.custom("MyFont-Regular", size: 16, relativeTo: .body))  // 支持 Dynamic Type
+```
+
+## Swift Macros + #Preview
+```swift
+// #Preview 宏（替代 PreviewProvider）
+#Preview("Light Mode") { ContentView().preferredColorScheme(.light) }
+#Preview("Dark Mode") { ContentView().preferredColorScheme(.dark) }
+#Preview(traits: .landscapeLeft) { ContentView() }
+
+// 常用内置宏
+@Observable      // 自动追踪属性变化
+@Model           // SwiftData 持久化
+@Generable       // Foundation Models 结构化输出
+@Entry           // 自定义 EnvironmentValues
+#Predicate       // 类型安全谓词
+
+// 自定义宏（Swift 5.9+）
+@attached(member)   // 添加成员
+@attached(peer)     // 添加同级声明
+@freestanding(expression)  // 独立表达式
+```
+
+## Data Race Safety（Swift 6 严格并发）
+```swift
+// Swift 6 默认开启数据竞争检查
+// Build Settings → Swift Language Version → 6
+
+// Sendable：可安全跨并发域传递
+struct UserData: Sendable { let name: String }  // 值类型自动 Sendable
+class Cache: @unchecked Sendable {              // 手动保证线程安全
+    private let lock = NSLock()
+    private var storage: [String: Data] = [:]
+}
+
+// AsyncSequence / AsyncStream
+for await value in someAsyncSequence { process(value) }
+
+// 自定义 AsyncStream
+let stream = AsyncStream<Int> { continuation in
+    Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+        continuation.yield(Int.random(in: 1...100))
+    }
+    continuation.onTermination = { _ in /* cleanup */ }
+}
+for await number in stream { print(number) }
+
+// Regex（Swift 5.7+）
+let pattern = /\d{4}-\d{2}-\d{2}/        // 正则字面量
+if let match = dateString.firstMatch(of: pattern) { print(match.output) }
+
+// RegexBuilder（声明式构建复杂正则）
+import RegexBuilder
+let emailRegex = Regex {
+    OneOrMore(.word)
+    "@"
+    OneOrMore(.word)
+    "."
+    Repeat(2...6) { .word }
+}
+```
+
+## LocalAuthentication（Face ID / Touch ID）
+```swift
+import LocalAuthentication
+
+func authenticateWithBiometrics() async throws -> Bool {
+    let context = LAContext()
+    var error: NSError?
+    guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+        throw error ?? LAError(.biometryNotAvailable)
+    }
+    return try await context.evaluatePolicy(
+        .deviceOwnerAuthenticationWithBiometrics,
+        localizedReason: "Unlock your data"
+    )
+}
+// Info.plist: NSFaceIDUsageDescription 必须设置
+```
+
+## CryptoKit（加密 / 哈希 / 签名）
+```swift
+import CryptoKit
+
+// SHA256 哈希
+let hash = SHA256.hash(data: data)
+let hashString = hash.compactMap { String(format: "%02x", $0) }.joined()
+
+// AES-GCM 对称加密
+let key = SymmetricKey(size: .bits256)
+let sealedBox = try AES.GCM.seal(plaintext, using: key)
+let decrypted = try AES.GCM.open(sealedBox, using: key)
+
+// P256 签名
+let privateKey = P256.Signing.PrivateKey()
+let signature = try privateKey.signature(for: data)
+let isValid = privateKey.publicKey.isValidSignature(signature, for: data)
+
+// HMAC
+let authCode = HMAC<SHA256>.authenticationCode(for: data, using: key)
+```
+
+## CoreHaptics（自定义触觉反馈）
+```swift
+import CoreHaptics
+
+let engine = try CHHapticEngine()
+try engine.start()
+
+// 自定义触觉模式
+let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.5)
+let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1.0)
+let event = CHHapticEvent(eventType: .hapticTransient, parameters: [sharpness, intensity],
+                          relativeTime: 0)
+let pattern = try CHHapticPattern(events: [event], parameters: [])
+let player = try engine.makePlayer(with: pattern)
+try player.start(atTime: CHHapticTimeImmediate)
+
+// engine 暂停/恢复
+engine.stoppedHandler = { reason in /* 处理引擎停止 */ }
+engine.resetHandler = { try self.engine.start() }
+```
+
+## UIHostingController（SwiftUI 嵌入 UIKit）
+```swift
+// SwiftUI View 嵌入 UIKit
+let hostingController = UIHostingController(rootView: MySwiftUIView())
+addChild(hostingController)
+view.addSubview(hostingController.view)
+hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+NSLayoutConstraint.activate([
+    hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+    hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+    hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+    hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+])
+hostingController.didMove(toParent: self)
+
+// 动态更新 SwiftUI 内容
+hostingController.rootView = MySwiftUIView(data: newData)
+```
+
+## 画中画（PiP）+ Now Playing 信息
+```swift
+import AVKit
+
+// 画中画
+let pipController = AVPictureInPictureController(playerLayer: playerLayer)
+pipController?.delegate = self
+if AVPictureInPictureController.isPictureInPictureSupported() {
+    pipController?.startPictureInPicture()
+}
+
+// Now Playing 信息（锁屏/控制中心显示）
+import MediaPlayer
+MPNowPlayingInfoCenter.default().nowPlayingInfo = [
+    MPMediaItemPropertyTitle: "Song Title",
+    MPMediaItemPropertyArtist: "Artist Name",
+    MPMediaItemPropertyPlaybackDuration: duration,
+    MPNowPlayingInfoPropertyElapsedPlaybackTime: currentTime
+]
+
+// 远程控制事件
+let commandCenter = MPRemoteCommandCenter.shared()
+commandCenter.playCommand.addTarget { _ in player.play(); return .success }
+commandCenter.pauseCommand.addTarget { _ in player.pause(); return .success }
+```
+
+## 其他常用框架速查
+```swift
+// WeatherKit（天气数据）
+import WeatherKit
+let weather = try await WeatherService.shared.weather(for: CLLocation(latitude: 37.7749, longitude: -122.4194))
+let temp = weather.currentWeather.temperature  // Measurement<UnitTemperature>
+
+// MusicKit（Apple Music 集成）
+import MusicKit
+let status = await MusicAuthorization.request()
+let searchRequest = MusicCatalogSearchRequest(term: "Taylor Swift", types: [Song.self])
+let response = try await searchRequest.response()
+
+// MultipeerConnectivity（设备间 P2P 通信）
+import MultipeerConnectivity
+let peerID = MCPeerID(displayName: UIDevice.current.name)
+let session = MCSession(peer: peerID)
+let advertiser = MCNearbyServiceAdvertiser(peer: peerID, discoveryInfo: nil, serviceType: "my-service")
+advertiser.startAdvertisingPeer()
+
+// DeviceCheck / App Attest（设备验证 / 防欺诈）
+import DeviceCheck
+let dcDevice = DCDevice.current
+if dcDevice.isSupported {
+    let token = try await dcDevice.generateToken()  // 发送到服务器验证
+}
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
