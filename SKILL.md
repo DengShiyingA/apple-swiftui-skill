@@ -3949,6 +3949,247 @@ UnevenRoundedRectangle(topLeadingRadius: 20, bottomTrailingRadius: 20)
 // configurationDisplayName + supportedFamilies 在 Widget 定义中
 ```
 
+
+## Foundation Models 安全与高级用法（WWDC25）
+
+### Session Instructions（系统指令，优先于 prompt）
+```swift
+let instructions = """
+    ALWAYS respond in a respectful way. \
+    If someone asks you to generate content that might be sensitive, \
+    you MUST decline with 'Sorry, I can't do that.'
+    """
+let session = LanguageModelSession(instructions: instructions)
+// instructions 优先级高于 prompt，不要在 instructions 中放用户输入（防 prompt injection）
+```
+
+### Guardrail 违规 + 拒绝处理
+```swift
+do {
+    let response = try await session.respond(to: prompt)
+} catch LanguageModelSession.GenerationError.guardrailViolation {
+    // 输入或输出触发安全护栏 → 重新措辞 prompt
+}
+
+// Guided Generation 中的拒绝（无法生成结构化输出时）
+do {
+    let result = try await session.respond(to: prompt, generating: [String].self)
+} catch LanguageModelSession.GenerationError.refusal(let refusal, _) {
+    if let message = try? await refusal.explanation {
+        showRefusalMessage(message)  // 显示拒绝原因
+    }
+}
+```
+
+### 宽松内容模式（处理敏感源材料）
+```swift
+// 适用于聊天 App 标签敏感话题、学习 App 讨论敏感内容等场景
+let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
+let session = LanguageModelSession(model: model)
+// 仅对字符串响应生效，Guided Generation 仍走默认护栏
+```
+
+### DynamicGenerationSchema（运行时动态 Schema）
+```swift
+// 当编译时不知道完整 schema 时使用（如餐厅菜单来自服务器）
+let menuSchema = DynamicGenerationSchema(
+    name: "Menu",
+    properties: [
+        DynamicGenerationSchema.Property(
+            name: "dailySoup",
+            schema: DynamicGenerationSchema(name: "dailySoup", anyOf: ["Tomato", "Chicken Noodle", "Clam Chowder"])
+        )
+    ]
+)
+let schema = try GenerationSchema(root: menuSchema, dependencies: [])
+let response = try await session.respond(to: "Pick a soup", schema: schema)
+// response 是 GenerationSchemaOutput，通过 .value(for: "dailySoup") 读取
+```
+
+### 安全最佳实践（WWDC25 官方）
+```swift
+// 1. 限制输入：固定选项 > 格式化包装 > 自由输入
+enum TopicOptions { case family, nature, work }
+
+// 2. 限制输出：用 @Generable enum 约束输出为安全预定义选项
+@Generable enum Breakfast { case waffles, pancakes, bagels, eggs }
+let result = try await session.respond(to: userInput, generating: Breakfast.self)
+
+// 3. 自定义 deny list（禁止词列表，可本地或服务器托管）
+func verifyText(_ text: String) -> Bool { !denyList.contains(where: text.contains) }
+
+// 4. 收集用户反馈：session.transcript → JSON → Feedback Assistant
+```
+
+## AVPlayer + Observation 框架（iOS 26，WWDC25）
+```swift
+import AVFoundation
+
+// 全局开启（必须在创建播放器之前设置）
+AVPlayer.isObservationEnabled = true
+
+struct PlayerView: View {
+    let url: URL
+    @State private var player: AVPlayer?
+
+    var body: some View {
+        ZStack {
+            if let player {
+                VideoPlayer(player: player)
+                TransportControls(player: player)
+            } else { ProgressView() }
+        }
+        .task { player = AVPlayer(url: url) }  // 延迟创建避免性能问题
+    }
+}
+
+struct TransportControls: View {
+    let player: AVPlayer
+    private var isPlaying: Bool { player.timeControlStatus == .playing }
+
+    var body: some View {
+        Button {
+            isPlaying ? player.pause() : player.play()
+        } label: {
+            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+        }
+        .disabled(player.currentItem?.status != .readyToPlay)
+        // 自动追踪 timeControlStatus / currentItem 变化，无需 KVO
+    }
+}
+```
+
+## Vision 文档表格识别（RecognizeDocumentsRequest，WWDC25）
+```swift
+import Vision
+
+let request = RecognizeDocumentsRequest()
+let observations = try await request.perform(on: imageData)
+
+if let document = observations.first?.document {
+    for table in document.tables {
+        for row in table.rows {
+            for cell in row {
+                let text = cell.content.text.transcript
+                // 访问检测到的数据（email、phone）
+                for data in cell.content.text.detectedData {
+                    switch data.match.details {
+                    case .emailAddress(let email): print(email.emailAddress)
+                    case .phoneNumber(let phone): print(phone.phoneNumber)
+                    default: break
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+## AlarmKit（iOS 26 新框架，闹钟调度）
+```swift
+import AlarmKit
+
+// 请求授权
+let alarmManager = AlarmManager.shared
+let state = try await alarmManager.requestAuthorization()
+// Info.plist: NSAlarmKitUsageDescription
+
+// 创建闹钟
+let presentation = AlarmPresentation(alert: .init(title: "Wake Up", stopButton: .stopButton))
+let attributes = AlarmAttributes(presentation: presentation, tintColor: .blue)
+let config = AlarmConfiguration(
+    schedule: .relative(.init(time: .init(hour: 7, minute: 0), repeats: .weekly([.monday, .friday]))),
+    attributes: attributes
+)
+let alarm = try await alarmManager.schedule(id: UUID(), configuration: config)
+
+// 监听闹钟状态更新
+for await alarms in alarmManager.alarmUpdates { updateUI(with: alarms) }
+```
+
+## Live Activities 进阶（Dynamic Island + 多设备，WWDC25）
+```swift
+import ActivityKit
+
+// Dynamic Island 展开/紧凑/最小布局
+ActivityConfiguration(for: DeliveryAttributes.self) { context in
+    // Lock Screen 布局
+    DeliveryLockScreenView(context: context)
+} dynamicIsland: { context in
+    DynamicIsland {
+        DynamicIslandExpandedRegion(.leading) { Image(systemName: "box.truck") }
+        DynamicIslandExpandedRegion(.center) { Text(context.state.status) }
+        DynamicIslandExpandedRegion(.trailing) { Text(context.state.eta) }
+    } compactLeading: {
+        Image(systemName: "box.truck")
+    } compactTrailing: {
+        Text(context.state.eta)
+    } minimal: {
+        Image(systemName: "box.truck")
+    }
+}
+// Apple Watch + CarPlay 自动适配
+.supplementalActivityFamilies([.small, .medium])
+
+// 根据 activityFamily 适配布局
+@Environment(\.activityFamily) var activityFamily
+switch activityFamily {
+case .small: CompactView(context: context)   // Watch / CarPlay
+case .medium: FullView(context: context)     // Lock Screen
+}
+```
+
+## Liquid Glass 采用指南（WWDC25 官方最佳实践）
+```swift
+// 系统组件自动采用 Liquid Glass（控件、导航栏、Sheet、Popover）
+// 自定义控件使用标准 button style 代替手动 glassEffect：
+Button("Action") { }
+    .buttonStyle(.glass)         // 或 .borderedProminent
+    .buttonBorderShape(.capsule) // 与硬件圆角呼应
+
+// scroll edge effect（内容滚到控件下方时自动模糊）
+ScrollView { content }
+    .scrollEdgeEffectStyle(.soft)  // 系统默认对标准 bar 生效
+
+// App Icon：Icon Composer 创建多层图标（前景/中景/背景）
+// 系统自动应用反射/折射/高光，支持 light/dark/clear/tinted 变体
+
+// 注意事项：
+// - Section header 自动改为 Title Case（不再全大写）
+// - Sheet 圆角增大，半屏 Sheet 缩进显示底部内容
+// - Action Sheet 从触发控件位置弹出（非底部边缘）
+// - 避免在 Liquid Glass 元素上叠加自定义背景
+// - 使用 .toolbarBackground(.hidden) 移除自定义工具栏背景
+```
+
+## SwiftUI 性能优化（Xcode 26 Instruments，WWDC25）
+```swift
+// Xcode 26 SwiftUI Performance Instrument 使用步骤：
+// 1. Product > Profile → 选择 SwiftUI 模板
+// 2. 录制 → 交互 → 停止
+// 3. 分析 View Body Updates / Hitches / Update Groups
+
+// 常见优化模式：
+
+// ❌ 避免：在 body 中执行昂贵计算
+// ✅ 推荐：异步计算 + 缓存结果
+
+// ❌ 避免：闭包捕获 self（导致任何属性变化都重新计算）
+// ✅ 推荐：在 init 中调用闭包，只存返回值
+
+// ❌ 避免：GeometryReader 中频繁更新 state
+// ✅ 推荐：判断变化幅度超过阈值才更新
+.onGeometryChange(for: CGSize.self) { $0.size } action: { newSize in
+    if abs(newSize.width - lastSize.width) > 10 { lastSize = newSize }
+}
+
+// ❌ 避免：@ObservableObject 广播所有属性变化
+// ✅ 推荐：迁移到 @Observable 宏（细粒度追踪）
+
+// 分析因果链：Instruments 中 Show Causes → 查看更新传播路径
+// 蓝色节点 = 你的代码，灰色节点 = 系统框架
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
