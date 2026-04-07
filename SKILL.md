@@ -2904,6 +2904,266 @@ arView.session.captureHighResolutionFrame { frame, error in
 }
 ```
 
+
+## AVAudioEngine + AVAudioSession（音频处理）
+```swift
+import AVFoundation
+
+// 配置音频会话
+let audioSession = AVAudioSession.sharedInstance()
+try audioSession.setCategory(.playback, mode: .default, policy: .longFormAudio)
+try audioSession.setActive(true)
+
+// AVAudioEngine（低延迟音频处理/播放）
+let engine = AVAudioEngine()
+let playerNode = AVAudioPlayerNode()
+engine.attach(playerNode)
+engine.connect(playerNode, to: engine.mainMixerNode, format: nil)
+try engine.start()
+
+let audioFile = try AVAudioFile(forReading: fileURL)
+playerNode.scheduleFile(audioFile, at: nil)
+playerNode.play()
+
+// 空间音频（visionOS / AirPods）
+try audioSession.setCategory(.playback, mode: .moviePlayback,
+    options: [.allowAirPlay, .allowBluetooth])
+// visionOS 自动支持空间音频，头部追踪通过 AVAudioSession 配置
+```
+
+## 视频编辑（AVMutableComposition + AVAssetWriter）
+```swift
+import AVFoundation
+
+// 合并多段视频
+let composition = AVMutableComposition()
+let videoTrack = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid)!
+let audioTrack = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)!
+
+let asset = AVAsset(url: videoURL)
+let assetVideoTrack = try await asset.loadTracks(withMediaType: .video).first!
+let duration = try await asset.load(.duration)
+try videoTrack.insertTimeRange(CMTimeRange(start: .zero, duration: duration), of: assetVideoTrack, at: .zero)
+
+// AVAssetWriter 自定义输出
+let writer = try AVAssetWriter(outputURL: outputURL, fileType: .mp4)
+let videoSettings: [String: Any] = [
+    AVVideoCodecKey: AVVideoCodecType.hevc,
+    AVVideoWidthKey: 1920,
+    AVVideoHeightKey: 1080
+]
+let writerInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
+writer.add(writerInput)
+writer.startWriting()
+writer.startSession(atSourceTime: .zero)
+```
+
+## Metal / ShaderLibrary（GPU 加速渲染）
+```swift
+// SwiftUI visualEffect 修饰符（iOS 17+）
+Text("Hello")
+    .visualEffect { content, proxy in
+        content.colorEffect(ShaderLibrary.rainbow(.float(proxy.size.width)))
+    }
+
+// SwiftUI + Metal Shader
+let shader = ShaderLibrary.myShader(.float(time), .float2(size))
+Rectangle()
+    .colorEffect(shader)       // 颜色变换
+    .distortionEffect(shader)  // 形变效果
+    .layerEffect(shader)       // 图层效果
+
+// drawingGroup（Metal 加速复杂视图合成）
+VStack { /* 大量图层 */ }
+    .drawingGroup()   // 离屏渲染后合成，提升性能
+```
+
+## visionOS 手部/平面/场景追踪
+```swift
+import ARKit
+
+// 手部追踪（visionOS）
+let handTracking = HandTrackingProvider()
+let session = ARKitSession()
+try await session.run([handTracking])
+for await update in handTracking.anchorUpdates {
+    let hand = update.anchor
+    if let indexTip = hand.skeleton.joint(.indexFingerTip) {
+        let position = indexTip.anchorFromJointTransform
+    }
+}
+
+// 平面检测
+let planeDetection = PlaneDetectionProvider(alignments: [.horizontal, .vertical])
+try await session.run([planeDetection])
+for await update in planeDetection.anchorUpdates {
+    let plane = update.anchor
+    let extent = plane.geometry.extent  // 平面大小
+}
+
+// 场景重建（网格）
+let sceneReconstruction = SceneReconstructionProvider()
+try await session.run([sceneReconstruction])
+
+// 世界追踪
+let worldTracking = WorldTrackingProvider()
+try await session.run([worldTracking])
+```
+
+## RealityKit 物理 + 碰撞
+```swift
+import RealityKit
+
+// 添加物理体
+let entity = ModelEntity(mesh: .generateSphere(radius: 0.1))
+entity.components[PhysicsBodyComponent.self] = PhysicsBodyComponent(
+    massProperties: .default,
+    material: .generate(friction: 0.5, restitution: 0.8),
+    mode: .dynamic
+)
+entity.components[CollisionComponent.self] = CollisionComponent(
+    shapes: [.generateSphere(radius: 0.1)]
+)
+
+// 施加力/速度
+entity.components[PhysicsMotionComponent.self] = PhysicsMotionComponent(
+    linearVelocity: [0, 2, 0]   // 向上发射
+)
+
+// AnchorEntity（空间锚定）
+let anchor = AnchorEntity(.plane(.horizontal, classification: .floor, minimumBounds: [0.5, 0.5]))
+anchor.addChild(entity)
+arView.scene.addAnchor(anchor)
+```
+
+## HKWorkout（运动追踪）
+```swift
+import HealthKit
+
+// 开始运动会话（watchOS）
+let config = HKWorkoutConfiguration()
+config.activityType = .running
+config.locationType = .outdoor
+
+let session = try HKWorkoutSession(healthStore: healthStore, configuration: config)
+let builder = session.associatedWorkoutBuilder()
+builder.dataSource = HKLiveWorkoutDataSource(healthStore: healthStore, workoutConfiguration: config)
+
+session.startActivity(with: .now)
+try await builder.beginCollection(at: .now)
+
+// 结束运动
+session.end()
+try await builder.endCollection(at: .now)
+let workout = try await builder.finishWorkout()
+
+// 添加运动样本
+let energySample = HKQuantitySample(type: .quantityType(forIdentifier: .activeEnergyBurned)!,
+    quantity: HKQuantity(unit: .kilocalorie(), doubleValue: 300),
+    start: startDate, end: endDate)
+try await builder.add([energySample])
+```
+
+## Apple Pencil 交互
+```swift
+// 悬停检测（iPad Pro + Apple Pencil 2）
+Rectangle()
+    .onPencilHover { phase, location, altitude in
+        // phase: .began, .changed, .ended
+        // altitude: 笔尖倾斜角度
+        hoverLocation = location
+    }
+
+// Pencil 双击手势（切换工具）
+@Environment(\.pencilPreferredAction) private var preferredAction
+
+// PencilKit 绘图
+import PencilKit
+struct DrawingView: UIViewRepresentable {
+    @Binding var canvasView: PKCanvasView
+    func makeUIView(context: Context) -> PKCanvasView {
+        canvasView.tool = PKInkingTool(.pen, color: .black, width: 5)
+        canvasView.drawingPolicy = .anyInput
+        return canvasView
+    }
+    func updateUIView(_ view: PKCanvasView, context: Context) {}
+}
+```
+
+## App Clip
+```swift
+// App Clip 入口（轻量版 App，<15MB）
+@main
+struct MyAppClip: App {
+    var body: some Scene {
+        WindowGroup {
+            AppClipView()
+                .appStoreOverlay(isPresented: $showOverlay) {
+                    SKOverlay.AppClipConfiguration(position: .bottom)
+                }
+        }
+    }
+}
+
+// 处理 App Clip URL
+.onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+    guard let url = activity.webpageURL else { return }
+    handleAppClipURL(url)
+}
+
+// 配置：Xcode → Target → App Clip → Associated Domains
+// 需要在 apple-app-site-association 中配置 appclips 字段
+```
+
+## Xcode 开发者工具速查
+
+### 崩溃报告分析
+```
+// Instruments 常用工具
+Time Profiler     → CPU 热点定位
+Allocations       → 内存增长分析
+Leaks             → 内存泄漏检测
+Network           → 网络请求分析
+SwiftUI           → View Body Updates（Xcode 26 新增）
+
+// 崩溃日志符号化
+xcrun atos -o MyApp.dSYM/Contents/Resources/DWARF/MyApp -arch arm64 -l 0x100000000 0x1000012AB
+
+// Xcode Cloud Webhook（CI/CD 集成外部服务）
+// 最多 5 个 webhook / 产品，触发事件：build 创建/开始/完成
+// POST payload 包含 build 状态、commit、artifact 信息
+```
+
+### 代码签名 + 配置文件
+```
+// 自动管理签名：Xcode → Signing & Capabilities → Automatically manage signing
+// 手动管理：配置 provisioning profile + 证书
+// Entitlements：HealthKit、App Groups、Push Notifications 等需在此添加
+
+// TestFlight：Archive → Distribute → TestFlight → 上传 → App Store Connect 管理
+```
+
+### DocC 文档
+```swift
+/// 计算两个数的和。
+///
+/// 使用此方法执行基本加法运算。
+///
+/// ```swift
+/// let result = add(2, 3) // returns 5
+/// ```
+///
+/// - Parameters:
+///   - a: 第一个数字。
+///   - b: 第二个数字。
+/// - Returns: 两个参数的和。
+/// - Throws: 永不抛出。
+func add(_ a: Int, _ b: Int) -> Int { a + b }
+
+// 生成文档：Product → Build Documentation
+// 支持 @Tutorial 编写交互式教程
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
