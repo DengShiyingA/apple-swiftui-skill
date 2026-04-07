@@ -1,18 +1,18 @@
 ---
 name: swiftui-development
 description: >
-  SwiftUI + Swift 6.2 + Xcode 26 + Apple Intelligence 生产级开发知识包（iOS 26+ / iPadOS 26+ / macOS Tahoe 26+ / visionOS 26+）—— 声明式 UI、Liquid Glass、Foundation Models on-device AI、App Intents、SwiftData、WidgetKit、HealthKit、CloudKit、RealityKit、Apple Pay、CoreBluetooth、NaturalLanguage、CoreMotion 等完整框架覆盖。
+  SwiftUI + Swift 6.2 + Xcode 26 + Apple Intelligence 生产级开发知识包（iOS 26+ / iPadOS 26+ / macOS Tahoe 26+ / visionOS 26+）—— 声明式 UI、Liquid Glass、Foundation Models on-device AI、App Intents、SwiftData、WidgetKit、HealthKit、CloudKit、RealityKit、Apple Pay、CoreBluetooth、NaturalLanguage、CoreMotion、AVFoundation、CoreML、Vision、ARKit、CoreImage、SafariServices、EventKit、Contacts、BackgroundTasks、CreateML、SpriteKit、Passkeys、DocumentGroup、Layout 协议、Accessibility、Localization 等 33+ 框架完整覆盖。
 
-  包含 350+ 代码示例、WWDC25/26 最佳实践、常见坑点。专为 Claude Code、Cursor、Xcode Coding Intelligence 等 AI 工具设计。
+  包含 450+ 代码示例、WWDC25/26 最佳实践、常见坑点。专为 Claude Code、Cursor、Xcode Coding Intelligence 等 AI 工具设计。
 
-  Trigger keywords (EN): SwiftUI, Swift 6.2, Xcode 26, Apple Intelligence, Foundation Models, LanguageModelSession, @Generable, Guided Generation, Liquid Glass, glassEffect, GlassEffectContainer, glassEffectID, NavigationStack, zoom transition, @Observable, @Model, SwiftData, Observations AsyncSequence, WebView, Rich TextEditor, WidgetKit, Live Activities, App Intents, AppEntity, EntityQuery, AppShortcuts, HealthKit, CloudKit, RealityKit, RealityView, CoreBluetooth, NaturalLanguage, CoreMotion, Apple Pay, PassKit, Sign in with Apple, StoreKit 2, Xcode Cloud, DocC, Swift Testing, SF Symbols, visionOS, spatial layout
+  Trigger keywords (EN): SwiftUI, Swift 6.2, Xcode 26, Apple Intelligence, Foundation Models, LanguageModelSession, @Generable, Guided Generation, Liquid Glass, glassEffect, GlassEffectContainer, glassEffectID, NavigationStack, zoom transition, @Observable, @Model, SwiftData, Observations AsyncSequence, WebView, Rich TextEditor, WidgetKit, Live Activities, App Intents, AppEntity, EntityQuery, AppShortcuts, HealthKit, CloudKit, RealityKit, RealityView, CoreBluetooth, NaturalLanguage, CoreMotion, Apple Pay, PassKit, Sign in with Apple, Passkeys, StoreKit 2, Xcode Cloud, DocC, Swift Testing, SF Symbols, visionOS, spatial layout, AVFoundation, AVPlayer, AVCaptureSession, CoreML, Vision, VNRecognizeTextRequest, ARKit, CoreImage, CIFilter, SafariServices, ASWebAuthenticationSession, EventKit, Contacts, ContactAccessButton, NWPathMonitor, BackgroundTasks, BGTaskScheduler, CoreData migration, CreateML, SpriteKit, SpriteView, DocumentGroup, FileDocument, Layout protocol, @AppStorage, @SceneStorage, Keychain, Codable, Accessibility, VoiceOver, Localization, Commands, openWindow
 
-  触发关键词（中文）: SwiftUI, Swift 6.2, Xcode 26, 苹果智能, Foundation Models, Liquid Glass, SwiftData, WidgetKit, App Intents, HealthKit, CloudKit, RealityKit, 蓝牙, 自然语言, Apple Pay, 登录苹果账号, StoreKit, 内购, iOS 26 开发, 多平台适配
+  触发关键词（中文）: SwiftUI, Swift 6.2, Xcode 26, 苹果智能, Foundation Models, Liquid Glass, SwiftData, WidgetKit, App Intents, HealthKit, CloudKit, RealityKit, 蓝牙, 自然语言, Apple Pay, Passkeys 无密码登录, StoreKit 内购, 音视频, 相机拍摄, 文字识别 OCR, 人脸检测, AR 增强现实, 图像滤镜, OAuth 登录, 日历提醒, 通讯录, 网络监控, 后台任务, 数据迁移, 机器学习, 2D 游戏, 文档型 App, 多窗口, 菜单命令, 无障碍, 本地化, iOS 26 开发, 多平台适配
 ---
 
 # SwiftUI Development - Production Knowledge Base（2026 年 4 月完整版）
 
-专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。覆盖 SwiftUI、Apple Intelligence、Liquid Glass、SwiftData、WidgetKit、App Intents、HealthKit、CloudKit、RealityKit、Apple Pay 等全套生产级框架。
+专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。覆盖 SwiftUI、Apple Intelligence、Liquid Glass、SwiftData、WidgetKit、App Intents、HealthKit、CloudKit、RealityKit、Apple Pay、AVFoundation、CoreML、Vision、ARKit、CoreImage、EventKit、Contacts、Passkeys、BackgroundTasks、SpriteKit、CreateML、DocumentGroup、Layout 协议、Accessibility、Localization 等 **33+ 框架**，52 个章节，450+ 代码示例。
 
 ## 平台快照
 | 项目 | 值 |
@@ -1290,6 +1290,356 @@ let nlModel = try NLModel(mlModel: textClassifier.model)
 print(nlModel.predictedLabel(for: "This is great!") ?? "unknown")
 ```
 
+
+## Foundation 常用模式
+
+### @AppStorage / UserDefaults
+```swift
+// @AppStorage 自动绑定 UserDefaults
+@AppStorage("username") var username = ""
+@AppStorage("isDarkMode") var isDarkMode = false
+
+// 手动访问
+UserDefaults.standard.set(true, forKey: "onboarded")
+let onboarded = UserDefaults.standard.bool(forKey: "onboarded")
+
+// 注册默认值（App 启动时调用）
+UserDefaults.standard.register(defaults: [
+    "theme": "light",
+    "fontSize": 16
+])
+```
+
+### Keychain（安全存储凭证）
+```swift
+import Security
+
+func saveToKeychain(key: String, value: String) {
+    let data = value.data(using: .utf8)!
+    let query: [String: Any] = [
+        kSecClass as String: kSecClassGenericPassword,
+        kSecAttrAccount as String: key,
+        kSecValueData as String: data,
+        kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
+    ]
+    SecItemDelete(query as CFDictionary)  // 先删除旧值
+    SecItemAdd(query as CFDictionary, nil)
+}
+
+func loadFromKeychain(key: String) -> String? {
+    let query: [String: Any] = [
+        kSecClass as String: kSecClassGenericPassword,
+        kSecAttrAccount as String: key,
+        kSecReturnData as String: true
+    ]
+    var result: CFTypeRef?
+    guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+          let data = result as? Data else { return nil }
+    return String(data: data, encoding: .utf8)
+}
+```
+
+### Codable / JSONDecoder
+```swift
+struct User: Codable {
+    let id: Int
+    let name: String
+    let email: String
+    var createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, email
+        case createdAt = "created_at"  // 映射 snake_case
+    }
+}
+
+let decoder = JSONDecoder()
+decoder.dateDecodingStrategy = .iso8601
+decoder.keyDecodingStrategy = .convertFromSnakeCase  // 自动转换
+
+let user = try decoder.decode(User.self, from: jsonData)
+
+let encoder = JSONEncoder()
+encoder.keyEncodingStrategy = .convertToSnakeCase
+let data = try encoder.encode(user)
+```
+
+### FileManager
+```swift
+// 获取 Documents 目录
+let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+let fileURL = docs.appendingPathComponent("data.json")
+
+// 写入 / 读取
+try data.write(to: fileURL, options: .atomic)
+let loaded = try Data(contentsOf: fileURL)
+
+// APFS 零拷贝克隆
+try FileManager.default.copyItem(at: sourceURL, to: destURL)
+
+// 检查磁盘空间
+let attributes = try FileManager.default.attributesOfFileSystem(forPath: docs.path)
+let freeSpace = attributes[.systemFreeSize] as? Int64 ?? 0
+```
+
+## Accessibility（无障碍）
+```swift
+// 基础标签、值、提示
+Image(systemName: "heart.fill")
+    .accessibilityLabel("Favorite")
+    .accessibilityAddTraits(.isButton)
+
+Text("\(score)")
+    .accessibilityLabel("Score: \(score)")
+    .accessibilityValue("\(score) points")
+    .accessibilityHint("Double tap to reset")
+
+// 自定义操作
+view.accessibilityAction(named: "Delete") { deleteItem() }
+
+// 焦点管理（VoiceOver 自动聚焦）
+@AccessibilityFocusState private var focused: Bool
+Button("Submit") { focused = true }
+    .accessibilityFocused($focused)
+
+// 合并子视图（把卡片作为整体播报）
+VStack { ... }.accessibilityElement(children: .combine)
+
+// 动态字体支持（自动，无需额外代码）
+Text("Title").font(.headline)  // 随系统字体大小缩放
+```
+
+## Custom Layout（Layout 协议）
+```swift
+struct RadialLayout: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Void) -> CGSize {
+        proposal.replacingUnspecifiedDimensions()
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout Void) {
+        let radius = min(bounds.width, bounds.height) / 2
+        let angle = (2 * Double.pi) / Double(subviews.count)
+        for (index, subview) in subviews.enumerated() {
+            let x = bounds.midX + radius * cos(Double(index) * angle)
+            let y = bounds.midY + radius * sin(Double(index) * angle)
+            subview.place(at: CGPoint(x: x, y: y), anchor: .center, proposal: .unspecified)
+        }
+    }
+}
+
+// 使用
+RadialLayout {
+    ForEach(items) { item in Circle().fill(item.color).frame(width: 30) }
+}
+
+// ViewThatFits：自动选择合适的布局变体
+ViewThatFits {
+    HStack { content }   // 优先尝试横排
+    VStack { content }   // 不够宽则降级竖排
+}
+```
+
+## 文档型 App（DocumentGroup）
+```swift
+import UniformTypeIdentifiers
+
+extension UTType {
+    static let myDocument = UTType(exportedAs: "com.example.mydoc")
+}
+
+struct MyDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.myDocument, .plainText] }
+    var text: String = ""
+
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents,
+              let string = String(data: data, encoding: .utf8) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        text = string
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        .init(regularFileWithContents: Data(text.utf8))
+    }
+}
+
+@main
+struct WritingApp: App {
+    var body: some Scene {
+        DocumentGroup(newDocument: MyDocument()) { file in
+            EditorView(document: file.$document)
+        }
+    }
+}
+```
+
+## 多窗口 + 状态恢复
+```swift
+// 多窗口（iPad / macOS）
+@main
+struct MyApp: App {
+    var body: some Scene {
+        WindowGroup { ContentView() }
+
+        // 以数据值驱动的辅助窗口
+        WindowGroup("Detail", for: Item.ID.self) { $id in
+            DetailView(itemID: id)
+        }
+    }
+}
+
+// 打开辅助窗口
+@Environment(\.openWindow) private var openWindow
+Button("Open Detail") { openWindow(value: item.id) }
+
+// @SceneStorage：每个 scene 独立持久化
+@SceneStorage("selectedTab") private var selectedTab = 0
+@SceneStorage("scrollPosition") private var position: String?
+
+// Handoff / NSUserActivity
+.userActivity("com.app.viewItem") { activity in
+    activity.typedPayload = selectedItem
+} onContinue: { activity in
+    selectedItem = try? activity.typedPayload(Item.self)
+}
+```
+
+## macOS 菜单命令（Commands）
+```swift
+// 定义命令
+struct AppCommands: Commands {
+    @FocusedValue(DataModel.self) private var model: DataModel?
+
+    var body: some Commands {
+        CommandGroup(after: .newItem) {
+            Button("New Message") { model?.addMessage() }
+                .keyboardShortcut("m", modifiers: [.command, .shift])
+                .disabled(model == nil)
+        }
+        CommandMenu("Tools") {
+            Button("Export") { model?.export() }
+            Divider()
+            Toggle("Show Inspector", isOn: $showInspector)
+        }
+    }
+}
+
+// 注册到 App
+@main
+struct MyApp: App {
+    var body: some Scene {
+        WindowGroup { ContentView().focusedSceneValue(dataModel) }
+            .commands { AppCommands() }
+    }
+}
+```
+
+## Passkeys（无密码登录）
+```swift
+import AuthenticationServices
+
+// 注册 Passkey
+func registerPasskey(for username: String, challengeData: Data) {
+    let provider = ASAuthorizationPlatformPublicKeyCredentialProvider(
+        relyingPartyIdentifier: "example.com"
+    )
+    let request = provider.createCredentialRegistrationRequest(
+        clientDataHash: challengeData,
+        name: username,
+        userID: Data(username.utf8)
+    )
+    let controller = ASAuthorizationController(authorizationRequests: [request])
+    controller.delegate = self
+    controller.performRequests()
+}
+
+// 验证 Passkey
+func authenticateWithPasskey(challengeData: Data) {
+    let provider = ASAuthorizationPlatformPublicKeyCredentialProvider(
+        relyingPartyIdentifier: "example.com"
+    )
+    let assertionRequest = provider.createCredentialAssertionRequest(
+        clientDataHash: challengeData
+    )
+    let controller = ASAuthorizationController(authorizationRequests: [assertionRequest])
+    controller.delegate = self
+    controller.performRequests()
+}
+
+// 委托回调
+func authorizationController(controller: ASAuthorizationController,
+    didCompleteWithAuthorization authorization: ASAuthorization) {
+    if let credential = authorization.credential
+        as? ASAuthorizationPlatformPublicKeyCredentialAssertion {
+        // 发送 credential.rawAuthenticatorData 到服务器验证
+    }
+}
+```
+
+## 本地化（Localization）
+```swift
+// 推荐：String(localized:) 带 comment
+let title = String(localized: "Welcome", comment: "App welcome screen title")
+
+// SwiftUI 自动识别 LocalizedStringKey
+Text("Add Item")  // 自动查找 Localizable.strings
+
+// 数字 / 货币 / 日期格式化（自动本地化）
+Text(price.formatted(.currency(code: "USD")))
+Text(date.formatted(.dateTime.year().month().day()))
+Text(count.formatted(.number))
+
+// 复数规则（.stringsdict 或内联 inflection）
+Button("Add ^[\(count) item](inflect: true)") { }
+// 中文：需在 Localizable.stringsdict 配置 NSStringLocalizedFormatKey
+
+// 支持从右到左（RTL）布局
+// SwiftUI 自动处理，避免使用 .leading/.trailing，改用 .leading（语义化）
+HStack { ... }  // 自动翻转 RTL
+```
+
+## SpriteKit（2D 游戏）
+```swift
+import SpriteKit
+import SwiftUI
+
+class GameScene: SKScene {
+    override func didMove(to view: SKView) {
+        backgroundColor = .black
+        physicsWorld.gravity = CGVector(dx: 0, dy: -5)
+
+        let sprite = SKSpriteNode(imageNamed: "player")
+        sprite.position = CGPoint(x: frame.midX, y: frame.midY)
+        sprite.physicsBody = SKPhysicsBody(rectangleOf: sprite.size)
+        sprite.physicsBody?.isDynamic = true
+        addChild(sprite)
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        let moveAction = SKAction.move(to: location, duration: 0.5)
+        children.first?.run(moveAction)
+    }
+
+    override func update(_ currentTime: TimeInterval) { /* 每帧逻辑 */ }
+}
+
+// 在 SwiftUI 中嵌入
+struct GameView: View {
+    var scene: SKScene {
+        let s = GameScene()
+        s.scaleMode = .resizeFill
+        return s
+    }
+    var body: some View {
+        SpriteView(scene: scene)
+            .ignoresSafeArea()
+    }
+}
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
@@ -1308,6 +1658,14 @@ print(nlModel.predictedLabel(for: "This is great!") ?? "unknown")
 15. **EventKit**：iOS 17+ 优先用 `requestWriteOnlyAccessToEvents()` 降低权限打扰；监听 `EKEventStoreChanged`
 16. **性能**：先用 Xcode 26 Performance Instrument profile，再优化；标准 Stack 优先，100+ 再用 LazyStack
 17. **并发**：UI 更新必须在 `@MainActor`；共享可变状态用 `actor` 隔离；避免 `Task.detached` 逃逸主 actor
+18. **Keychain**：`SecItemAdd` 前先 `SecItemDelete` 防重复；设置 `kSecAttrAccessibleWhenUnlocked` 保护数据
+19. **Passkeys**：先检查 `authorizationStateForPlatformCredentials` 再发起请求；服务端需实现 WebAuthn 标准
+20. **Accessibility**：用 `.accessibilityElement(children: .combine)` 合并卡片；避免图片缺少 `accessibilityLabel`
+21. **Localization**：`^[count item](inflect: true)` 自动处理复数；日期/货币用 `.formatted()` 而非手动格式化
+22. **DocumentGroup**：`FileDocument` 的 `readableContentTypes` 必须注册 UTType；`fileWrapper` 中用 `.atomic` 写入
+23. **SpriteKit**：`SKScene.scaleMode = .resizeFill` 适配不同屏幕；物理引擎在后台会继续运行，切后台时 `isPaused = true`
+24. **CIFilter**：`CIContext` 创建昂贵，全局仅创建一次；滤镜链自动合并优化
+25. **Custom Layout**：`sizeThatFits` 和 `placeSubviews` 可能被多次调用，避免副作用；用 `makeCache` 缓存昂贵计算
 
 ## 持续更新资源
 - SwiftUI：https://developer.apple.com/documentation/swiftui
@@ -1328,5 +1686,15 @@ print(nlModel.predictedLabel(for: "This is great!") ?? "unknown")
 - BackgroundTasks：https://developer.apple.com/documentation/backgroundtasks
 - Swift Testing：https://developer.apple.com/documentation/testing
 - Xcode Cloud：https://developer.apple.com/documentation/xcode/xcode-cloud
+- SpriteKit：https://developer.apple.com/documentation/spritekit
+- EventKit：https://developer.apple.com/documentation/eventkit
+- Contacts：https://developer.apple.com/documentation/contacts
+- CoreImage：https://developer.apple.com/documentation/coreimage
+- CoreMotion：https://developer.apple.com/documentation/coremotion
+- CoreBluetooth：https://developer.apple.com/documentation/corebluetooth
+- NaturalLanguage：https://developer.apple.com/documentation/naturallanguage
+- Network：https://developer.apple.com/documentation/network
+- SafariServices：https://developer.apple.com/documentation/safariservices
+- PassKit：https://developer.apple.com/documentation/passkit
 
 **编辑规则**：仅修改此 SKILL.md → 运行 build 脚本生成各 AI 工具配置。
