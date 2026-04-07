@@ -302,7 +302,7 @@ TimelineEntryRelevance(score: 10, duration: 3600)
 WidgetCenter.shared.reloadTimelines(ofKind: "GameStatus")
 ```
 
-## 导航（NavigationStack + Zoom 过渡）
+## 导航（NavigationStack + Zoom 过渡 + TabView）
 ```swift
 // Zoom 过渡（iOS 18+，列表→详情的丝滑动画）
 @Namespace private var ns
@@ -323,6 +323,31 @@ struct ItemList: View {
         }
     }
 }
+
+// TabView（iOS 18+ 新 Tab API）
+TabView {
+    Tab("Home", systemImage: "house") {
+        NavigationStack { HomeView() }
+    }
+    Tab("Search", systemImage: "magnifyingglass") {
+        NavigationStack { SearchView() }
+    }
+    Tab("Profile", systemImage: "person") {
+        NavigationStack { ProfileView() }
+    }
+}
+.tabViewStyle(.tabBarOnly)   // 或 .sidebarAdaptable（iPad 自适应侧栏）
+
+// 编程式切换 Tab
+@State private var selectedTab = 0
+TabView(selection: $selectedTab) {
+    Tab("Home", systemImage: "house", value: 0) { HomeView() }
+    Tab("Settings", systemImage: "gear", value: 1) { SettingsView() }
+}
+
+// badge
+Tab("Inbox", systemImage: "tray") { InboxView() }
+    .badge(unreadCount)
 ```
 
 ## 搜索界面
