@@ -2188,6 +2188,260 @@ TimelineView(.periodic(from: .now, by: 1.0)) { timeline in
 ```
 
 
+## Deep Link / Universal Links
+```swift
+// URL Scheme（自定义协议）
+// Info.plist: CFBundleURLSchemes = ["myapp"]
+@main
+struct MyApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .onOpenURL { url in   // myapp://item/123
+                    if let id = parseItemID(from: url) { navigate(to: id) }
+                }
+        }
+    }
+}
+
+// Universal Links（HTTPS 域名关联）
+// apple-app-site-association 文件放在域名 /.well-known/ 下
+// {"applinks":{"apps":[],"details":[{"appIDs":["TEAMID.com.app.id"],"paths":["/item/*"]}]}}
+
+// 打开外部 URL
+@Environment(\.openURL) private var openURL
+Button("Open Website") { openURL(URL(string: "https://example.com")!) }
+```
+
+## App 发布必备
+
+### Privacy Manifest（PrivacyInfo.xcprivacy，App Store 强制）
+```xml
+<!-- 声明使用的隐私 API 和数据类型 -->
+<dict>
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array><string>CA92.1</string></array>
+        </dict>
+    </array>
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array><!-- 声明收集的数据类型 --></array>
+</dict>
+```
+
+### App Tracking Transparency（IDFA 追踪授权）
+```swift
+import AppTrackingTransparency
+
+func requestTrackingPermission() {
+    ATTrackingManager.requestTrackingAuthorization { status in
+        switch status {
+        case .authorized: print("Tracking allowed")
+        case .denied, .restricted: print("Tracking denied")
+        case .notDetermined: break
+        @unknown default: break
+        }
+    }
+}
+// Info.plist 必须添加 NSUserTrackingUsageDescription
+```
+
+### In-App Review（请求评分）
+```swift
+import StoreKit
+@Environment(\.requestReview) private var requestReview
+
+// 在合适时机触发（用户完成关键操作后）
+requestReview()
+// 系统自动限制弹出频率，无需手动节流
+```
+
+### Info.plist 常用配置
+```xml
+NSCameraUsageDescription        <!-- 相机权限说明 -->
+NSMicrophoneUsageDescription    <!-- 麦克风 -->
+NSLocationWhenInUseUsageDescription  <!-- 位置 -->
+NSPhotoLibraryUsageDescription  <!-- 相册 -->
+NSHealthShareUsageDescription   <!-- HealthKit 读取 -->
+NSFaceIDUsageDescription        <!-- Face ID -->
+NSUserTrackingUsageDescription  <!-- 追踪 -->
+UIBackgroundModes               <!-- 后台模式 -->
+```
+
+## App Groups + iCloud KV Store
+```swift
+// App Groups（App / Widget / Extension 共享数据）
+let sharedDefaults = UserDefaults(suiteName: "group.com.app.shared")
+sharedDefaults?.set("value", forKey: "key")
+
+// 共享文件目录
+let groupURL = FileManager.default.containerURL(
+    forSecurityApplicationGroupIdentifier: "group.com.app.shared"
+)!
+
+// iCloud Key-Value Store（跨设备小数据同步，限 1MB）
+let kvStore = NSUbiquitousKeyValueStore.default
+kvStore.set("value", forKey: "key")
+kvStore.synchronize()
+// 监听远程变更
+NotificationCenter.default.addObserver(forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+    object: kvStore, queue: .main) { _ in /* 刷新 UI */ }
+```
+
+## Spotlight 索引（CoreSpotlight）
+```swift
+import CoreSpotlight
+import MobileCoreServices
+
+// 索引内容
+let item = CSSearchableItem(
+    uniqueIdentifier: "item-\(id)",
+    domainIdentifier: "com.app.items",
+    attributeSet: {
+        let attrs = CSSearchableItemAttributeSet(contentType: .text)
+        attrs.title = "My Item"
+        attrs.contentDescription = "Description"
+        attrs.thumbnailData = thumbnailData
+        return attrs
+    }()
+)
+CSSearchableIndex.default().indexSearchableItems([item])
+
+// 处理点击搜索结果
+.onContinueUserActivity(CSSearchableItemActionType) { activity in
+    if let id = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String {
+        navigate(to: id)
+    }
+}
+```
+
+## Home Screen Quick Actions
+```swift
+// Info.plist 静态快捷方式
+// UIApplicationShortcutItems: [{UIApplicationShortcutItemType: "newItem", UIApplicationShortcutItemTitle: "New Item", UIApplicationShortcutItemIconType: "UIApplicationShortcutIconTypeAdd"}]
+
+// 动态快捷方式
+UIApplication.shared.shortcutItems = [
+    UIApplicationShortcutItem(type: "search", localizedTitle: "Search", localizedSubtitle: nil,
+        icon: UIApplicationShortcutIcon(systemImageName: "magnifyingglass"))
+]
+
+// 处理
+.onContinueUserActivity("newItem") { _ in showNewItem = true }
+```
+
+## Widget 进阶（WidgetFamily / Dynamic Island / Lock Screen）
+```swift
+import WidgetKit
+
+struct MyWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "myWidget", provider: MyProvider()) { entry in
+            MyWidgetView(entry: entry)
+        }
+        .supportedFamilies([
+            .systemSmall, .systemMedium, .systemLarge,    // 主屏幕
+            .accessoryCircular, .accessoryRectangular,    // Lock Screen
+            .accessoryInline                               // Lock Screen 单行
+        ])
+    }
+}
+
+// 根据 family 适配布局
+@Environment(\.widgetFamily) var family
+switch family {
+case .systemSmall: CompactView()
+case .accessoryCircular: Gauge(value: progress) { Image(systemName: "bolt") }
+default: FullView()
+}
+```
+
+## Extensions（扩展类型）
+```swift
+// Share Extension：接收系统分享内容
+// 新建 Target → Share Extension，在 SLComposeServiceViewController 中处理
+
+// Notification Service Extension：修改推送内容（加密解密、附件下载）
+class NotificationService: UNNotificationServiceExtension {
+    override func didReceive(_ request: UNNotificationRequest,
+        withContentHandler handler: @escaping (UNNotificationContent) -> Void) {
+        let content = request.content.mutableCopy() as! UNMutableNotificationContent
+        content.title = "Modified: \(content.title)"
+        // 下载附件、解密内容等
+        handler(content)
+    }
+}
+```
+
+## 常用修饰符速查
+```swift
+// List 样式
+.listStyle(.plain)              // 或 .insetGrouped, .sidebar, .grouped
+.listRowBackground(Color.clear) // 自定义行背景
+.listRowSeparator(.hidden)      // 隐藏分隔线
+
+// 外观
+.preferredColorScheme(.dark)    // 强制深色
+.tint(.orange)                  // 控件着色
+.foregroundStyle(.secondary)    // 文字层级
+.labelStyle(.titleAndIcon)      // Label 样式
+.toggleStyle(.switch)           // Toggle 样式
+.buttonStyle(.borderedProminent)
+
+// 布局
+.fixedSize()                    // 不压缩内容
+.fixedSize(horizontal: false, vertical: true)  // 仅垂直不压缩
+.layoutPriority(1)              // 布局优先级
+
+// 视觉
+.blur(radius: 10)               // 模糊
+.shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+.rotation3DEffect(.degrees(15), axis: (x: 1, y: 0, z: 0))
+.mask { LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom) }
+.compositingGroup()             // 合并子视图后再应用效果
+.drawingGroup()                 // Metal 加速渲染（大量图层时）
+
+// 交互
+.disabled(isLoading)
+.allowsHitTesting(false)        // 穿透点击
+.opacity(isVisible ? 1 : 0)
+.hidden()                       // 隐藏但保留空间
+
+// 编辑
+@Environment(\.editMode) private var editMode
+EditButton()                    // 切换编辑模式
+@Environment(\.undoManager) private var undoManager
+undoManager?.registerUndo(withTarget: self) { $0.undo() }
+
+// 搜索增强
+.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always))
+.searchSuggestions {
+    ForEach(suggestions) { s in Text(s.title).searchCompletion(s.query) }
+}
+.searchScopes($scope) {
+    Text("All").tag(SearchScope.all)
+    Text("Recent").tag(SearchScope.recent)
+}
+
+// 多平台条件编译
+#if os(iOS)
+// iPhone / iPad
+#elseif os(macOS)
+// Mac
+#elseif os(watchOS)
+// Apple Watch
+#elseif os(tvOS)
+// Apple TV
+#elseif os(visionOS)
+// Vision Pro
+#endif
+```
+
+
 ## 常用控件速查
 
 ### 表单控件
