@@ -1896,6 +1896,297 @@ operation.queryResultBlock = { result in
 database.add(operation)
 ```
 
+
+## Modal 弹出（Sheet / FullScreenCover / Alert / Popover）
+```swift
+@State private var showSheet = false
+@State private var showAlert = false
+
+// Sheet（半屏）
+Button("Show Sheet") { showSheet = true }
+    .sheet(isPresented: $showSheet) {
+        DetailView()
+            .presentationDetents([.medium, .large])   // 可拖拽高度
+            .presentationDragIndicator(.visible)
+    }
+
+// FullScreenCover（全屏）
+.fullScreenCover(isPresented: $showFull) { FullView() }
+
+// Alert
+Button("Delete") { showAlert = true }
+    .alert("Are you sure?", isPresented: $showAlert) {
+        Button("Delete", role: .destructive) { delete() }
+        Button("Cancel", role: .cancel) { }
+    } message: {
+        Text("This action cannot be undone.")
+    }
+
+// Confirmation Dialog（操作表）
+.confirmationDialog("Options", isPresented: $showOptions) {
+    Button("Share") { }
+    Button("Delete", role: .destructive) { }
+}
+
+// Popover（iPad / Mac 弹出气泡）
+.popover(isPresented: $showPopover, arrowEdge: .top) {
+    Text("Popover content").padding()
+}
+```
+
+## NavigationSplitView（iPad / Mac 分栏导航）
+```swift
+@State private var selectedCategory: Category?
+@State private var selectedItem: Item?
+
+NavigationSplitView {
+    List(categories, selection: $selectedCategory) { category in
+        Label(category.name, systemImage: category.icon)
+    }
+    .navigationTitle("Categories")
+} content: {
+    if let category = selectedCategory {
+        List(category.items, selection: $selectedItem) { item in
+            Text(item.title)
+        }
+    }
+} detail: {
+    if let item = selectedItem {
+        DetailView(item: item)
+    } else {
+        ContentUnavailableView("Select an Item", systemImage: "tray")
+    }
+}
+.navigationSplitViewStyle(.balanced)
+```
+
+## ContentUnavailableView（空状态）
+```swift
+// 系统预设搜索空状态
+ContentUnavailableView.search(text: searchText)
+
+// 自定义空状态
+ContentUnavailableView {
+    Label("No Items", systemImage: "tray")
+} description: {
+    Text("Add items to get started.")
+} actions: {
+    Button("Add Item") { addItem() }
+}
+```
+
+## Swift Charts（数据可视化）
+```swift
+import Charts
+
+struct SalesData: Identifiable {
+    let id = UUID()
+    let month: String
+    let revenue: Double
+}
+
+struct SalesChart: View {
+    let data: [SalesData]
+    var body: some View {
+        Chart(data) { item in
+            BarMark(
+                x: .value("Month", item.month),
+                y: .value("Revenue", item.revenue)
+            )
+            .foregroundStyle(.blue.gradient)
+        }
+        .chartYAxis { AxisMarks(preset: .aligned) }
+        .frame(height: 200)
+    }
+}
+
+// 折线图
+Chart(data) { item in
+    LineMark(x: .value("Month", item.month), y: .value("Revenue", item.revenue))
+        .interpolationMethod(.catmullRom)
+    AreaMark(x: .value("Month", item.month), y: .value("Revenue", item.revenue))
+        .foregroundStyle(.blue.opacity(0.1))
+}
+```
+
+## PhotosPicker（照片选择器）
+```swift
+import PhotosUI
+
+@State private var selectedPhoto: PhotosPickerItem?
+@State private var image: Image?
+
+PhotosPicker("Select Photo", selection: $selectedPhoto, matching: .images)
+    .onChange(of: selectedPhoto) { _, newItem in
+        Task {
+            if let data = try? await newItem?.loadTransferable(type: Data.self),
+               let uiImage = UIImage(data: data) {
+                image = Image(uiImage: uiImage)
+            }
+        }
+    }
+
+// 多选
+@State private var selectedPhotos: [PhotosPickerItem] = []
+PhotosPicker("Select Photos", selection: $selectedPhotos, maxSelectionCount: 5, matching: .images)
+```
+
+## ShareLink（系统分享）
+```swift
+ShareLink(item: URL(string: "https://example.com")!) {
+    Label("Share", systemImage: "square.and.arrow.up")
+}
+
+// 自定义 Transferable
+ShareLink(item: myDocument, preview: SharePreview(myDocument.title, image: myDocument.thumbnail))
+```
+
+## TipKit（上下文提示）
+```swift
+import TipKit
+
+struct FavoriteTip: Tip {
+    var title: Text { Text("Save as Favorite") }
+    var message: Text? { Text("Tap the heart to save this item.") }
+    var image: Image? { Image(systemName: "heart") }
+}
+
+struct ItemView: View {
+    let tip = FavoriteTip()
+    var body: some View {
+        Button { } label: { Image(systemName: "heart") }
+            .popoverTip(tip)          // 气泡提示
+        // 或 TipView(tip)            // 内联提示
+    }
+}
+
+// App 入口配置
+@main
+struct MyApp: App {
+    init() { try? Tips.configure() }
+}
+```
+
+## LazyVGrid / LazyHGrid（网格布局）
+```swift
+let columns = [
+    GridItem(.adaptive(minimum: 100)),  // 自适应列数
+]
+
+LazyVGrid(columns: columns, spacing: 16) {
+    ForEach(items) { item in
+        ItemCard(item: item)
+    }
+}
+
+// 固定列
+let fixedColumns = [
+    GridItem(.fixed(120)),
+    GridItem(.fixed(120)),
+    GridItem(.flexible()),
+]
+```
+
+## Shape / Path / Gradient（自定义绘图）
+```swift
+// 自定义形状
+struct Star: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path { path in
+            let center = CGPoint(x: rect.midX, y: rect.midY)
+            // 绘制五角星路径...
+            path.move(to: CGPoint(x: center.x, y: rect.minY))
+            // ...
+        }
+    }
+}
+
+Star().fill(.yellow).frame(width: 100, height: 100)
+
+// 渐变
+LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing)
+RadialGradient(colors: [.white, .black], center: .center, startRadius: 0, endRadius: 100)
+AngularGradient(colors: [.red, .yellow, .green, .blue, .red], center: .center)
+```
+
+## EnvironmentKey 自定义环境值
+```swift
+// 定义
+struct ThemeKey: EnvironmentKey {
+    static var defaultValue: Theme = .light
+}
+extension EnvironmentValues {
+    var theme: Theme {
+        get { self[ThemeKey.self] }
+        set { self[ThemeKey.self] = newValue }
+    }
+}
+
+// Swift 6 简写（@Entry 宏）
+extension EnvironmentValues {
+    @Entry var appAccentColor: Color = .blue
+}
+
+// 注入
+ContentView().environment(\.theme, .dark)
+
+// 读取
+@Environment(\.theme) private var theme
+```
+
+## OSLog / Logger（结构化日志）
+```swift
+import os
+
+let logger = Logger(subsystem: "com.app.myapp", category: "networking")
+
+logger.info("Request started: \(url.absoluteString)")
+logger.debug("Response: \(data.count) bytes")
+logger.error("Failed: \(error.localizedDescription, privacy: .public)")
+logger.fault("Critical failure")   // 最高级别
+
+// 在 Instruments 中用 os_signpost 追踪性能区间
+let signposter = OSSignposter(logger: logger)
+let state = signposter.beginInterval("loadData")
+// ... 执行操作
+signposter.endInterval("loadData", state)
+```
+
+## Live Activities（ActivityKit 实时活动）
+```swift
+import ActivityKit
+
+// 定义 Attributes
+struct DeliveryAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        var status: String
+        var estimatedArrival: Date
+    }
+    var orderNumber: String
+}
+
+// 启动 Live Activity
+let attributes = DeliveryAttributes(orderNumber: "12345")
+let state = DeliveryAttributes.ContentState(status: "On the way", estimatedArrival: .now.addingTimeInterval(1800))
+let activity = try Activity.request(attributes: attributes, content: .init(state: state, staleDate: nil))
+
+// 更新
+let newState = DeliveryAttributes.ContentState(status: "Delivered", estimatedArrival: .now)
+await activity.update(.init(state: newState, staleDate: nil))
+
+// 结束
+await activity.end(.init(state: newState, staleDate: nil), dismissalPolicy: .after(.now + 3600))
+```
+
+## TimelineView（定时刷新 View）
+```swift
+// 每秒刷新（时钟等场景）
+TimelineView(.periodic(from: .now, by: 1.0)) { timeline in
+    Text(timeline.date.formatted(.dateTime.hour().minute().second()))
+        .font(.largeTitle.monospacedDigit())
+}
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
