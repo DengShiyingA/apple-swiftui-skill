@@ -3,7 +3,7 @@ name: swiftui-development
 description: >
   SwiftUI + Swift 6.2 + Xcode 26 + Apple Intelligence 生产级开发知识包（iOS 26+ / iPadOS 26+ / macOS Tahoe 26+ / visionOS 26+）—— 声明式 UI、Liquid Glass、Foundation Models on-device AI、App Intents、SwiftData、WidgetKit、HealthKit、CloudKit、RealityKit、Apple Pay、CoreBluetooth、NaturalLanguage、CoreMotion、AVFoundation、CoreML、Vision、ARKit、CoreImage、SafariServices、EventKit、Contacts、BackgroundTasks、CreateML、SpriteKit、Passkeys、DocumentGroup、Layout 协议、Accessibility、Localization 等 33+ 框架完整覆盖。
 
-  包含 450+ 代码示例、WWDC25/26 最佳实践、常见坑点。专为 Claude Code、Cursor、Xcode Coding Intelligence 等 AI 工具设计。
+  包含 500+ 代码示例、WWDC25/26 最佳实践、常见坑点。专为 Claude Code、Cursor、Xcode Coding Intelligence 等 AI 工具设计。
 
   Trigger keywords (EN): SwiftUI, Swift 6.2, Xcode 26, Apple Intelligence, Foundation Models, LanguageModelSession, @Generable, Guided Generation, Liquid Glass, glassEffect, GlassEffectContainer, glassEffectID, NavigationStack, zoom transition, @Observable, @Model, SwiftData, Observations AsyncSequence, WebView, Rich TextEditor, WidgetKit, Live Activities, App Intents, AppEntity, EntityQuery, AppShortcuts, HealthKit, CloudKit, RealityKit, RealityView, CoreBluetooth, NaturalLanguage, CoreMotion, Apple Pay, PassKit, Sign in with Apple, Passkeys, StoreKit 2, Xcode Cloud, DocC, Swift Testing, SF Symbols, visionOS, spatial layout, AVFoundation, AVPlayer, AVCaptureSession, CoreML, Vision, VNRecognizeTextRequest, ARKit, CoreImage, CIFilter, SafariServices, ASWebAuthenticationSession, EventKit, Contacts, ContactAccessButton, NWPathMonitor, BackgroundTasks, BGTaskScheduler, CoreData migration, CreateML, SpriteKit, SpriteView, DocumentGroup, FileDocument, Layout protocol, @AppStorage, @SceneStorage, Keychain, Codable, Accessibility, VoiceOver, Localization, Commands, openWindow
 
@@ -12,7 +12,7 @@ description: >
 
 # SwiftUI Development - Production Knowledge Base（2026 年 4 月完整版）
 
-专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。覆盖 SwiftUI、Apple Intelligence、Liquid Glass、SwiftData、WidgetKit、App Intents、HealthKit、CloudKit、RealityKit、Apple Pay、AVFoundation、CoreML、Vision、ARKit、CoreImage、EventKit、Contacts、Passkeys、BackgroundTasks、SpriteKit、CreateML、DocumentGroup、Layout 协议、Accessibility、Localization 等 **33+ 框架**，52 个章节，450+ 代码示例。
+专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。覆盖 SwiftUI、Apple Intelligence、Liquid Glass、SwiftData、WidgetKit、App Intents、HealthKit、CloudKit、RealityKit、Apple Pay、AVFoundation、CoreML、Vision、ARKit、CoreImage、EventKit、Contacts、Passkeys、BackgroundTasks、SpriteKit、CreateML、DocumentGroup、Layout 协议、Accessibility、Localization 等 **33+ 框架**，58 个章节，500+ 代码示例。
 
 ## 平台快照
 | 项目 | 值 |
@@ -1638,6 +1638,262 @@ struct GameView: View {
             .ignoresSafeArea()
     }
 }
+```
+
+
+## SwiftUI 进阶模式
+
+### @Bindable（iOS 17+，Observable 模型绑定）
+```swift
+@Observable class Recipe {
+    var name = ""
+    var rating = 0
+}
+
+struct RecipeEditor: View {
+    @Bindable var recipe: Recipe   // 直接投射 $binding
+    var body: some View {
+        TextField("Name", text: $recipe.name)
+        Stepper("Rating: \(recipe.rating)", value: $recipe.rating, in: 0...5)
+    }
+}
+```
+
+### AnyLayout（运行时切换布局，带动画）
+```swift
+let layout = isGrid ? AnyLayout(HStackLayout()) : AnyLayout(VStackLayout())
+
+layout {
+    ForEach(items) { item in ItemView(item: item) }
+}
+.animation(.default, value: isGrid)  // 布局切换自动动画
+```
+
+### KeyframeAnimator（多轨道关键帧动画）
+```swift
+struct AnimationValues {
+    var scale = 1.0
+    var yOffset = 0.0
+    var angle = Angle.zero
+}
+
+Text("🎉")
+    .keyframeAnimator(initialValue: AnimationValues(), trigger: trigger) { content, value in
+        content
+            .scaleEffect(value.scale)
+            .offset(y: value.yOffset)
+            .rotationEffect(value.angle)
+    } keyframes: { _ in
+        KeyframeTrack(\.scale) {
+            SpringKeyframe(1.5, duration: 0.4, spring: .bouncy)
+            SpringKeyframe(1.0, spring: .bouncy)
+        }
+        KeyframeTrack(\.yOffset) {
+            LinearKeyframe(-60, duration: 0.2)
+            SpringKeyframe(0, duration: 0.6, spring: .bouncy)
+        }
+        KeyframeTrack(\.angle) {
+            LinearKeyframe(.degrees(15), duration: 0.2)
+            SpringKeyframe(.zero, spring: .bouncy)
+        }
+    }
+```
+
+### AsyncImage（异步加载远程图片）
+```swift
+AsyncImage(url: URL(string: "https://example.com/photo.jpg")) { phase in
+    switch phase {
+    case .empty: ProgressView()
+    case .success(let image):
+        image.resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(width: 200, height: 200)
+            .clipped()
+    case .failure: Image(systemName: "photo").foregroundStyle(.secondary)
+    @unknown default: EmptyView()
+    }
+}
+
+// 图片缩放模式
+Image("photo")
+    .resizable()
+    .aspectRatio(contentMode: .fit)    // 完整显示，可能留白
+    .frame(width: 300, height: 200)
+
+Image("photo")
+    .resizable()
+    .aspectRatio(contentMode: .fill)   // 填满，可能裁切
+    .frame(width: 300, height: 200)
+    .clipped()                          // 必须加 clipped 防溢出
+```
+
+### onChange（监听值变化）
+```swift
+@State private var searchText = ""
+
+TextField("Search", text: $searchText)
+    .onChange(of: searchText) { oldValue, newValue in   // iOS 17+ 双参数
+        filterResults(query: newValue)
+    }
+```
+
+### PreferenceKey（子视图向父视图传数据）
+```swift
+struct HeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+// 子视图上报高度
+ChildView()
+    .background(GeometryReader { geo in
+        Color.clear.preference(key: HeightKey.self, value: geo.size.height)
+    })
+
+// 父视图接收
+.onPreferenceChange(HeightKey.self) { height in
+    containerHeight = height
+}
+```
+
+### Table（macOS / iPadOS 多列表格）
+```swift
+@State private var sortOrder = [KeyPathComparator(\Person.name)]
+
+Table(people, selection: $selectedID, sortOrder: $sortOrder) {
+    TableColumn("Name", value: \.name)
+    TableColumn("Age", value: \.age) { Text("\($0.age)") }
+    TableColumn("Email", value: \.email)
+}
+.onChange(of: sortOrder) { _, newOrder in
+    people.sort(using: newOrder)
+}
+```
+
+### AttributedString（富文本渲染）
+```swift
+var styled: AttributedString {
+    var str = AttributedString("Welcome to ")
+    var bold = AttributedString("SwiftUI")
+    bold.font = .body.bold()
+    bold.foregroundColor = .blue
+    str += bold
+    return str
+}
+
+Text(styled).textSelection(.enabled)
+```
+
+## WebKit JS 桥接（双向通信）
+```swift
+import WebKit
+
+struct WebBridgeView: UIViewRepresentable {
+    func makeUIView(context: Context) -> WKWebView {
+        let config = WKWebViewConfiguration()
+        config.userContentController.add(context.coordinator, name: "nativeHandler")
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.load(URLRequest(url: URL(string: "https://example.com")!))
+        return webView
+    }
+    func updateUIView(_ webView: WKWebView, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    class Coordinator: NSObject, WKScriptMessageHandler {
+        // JS 调用 Swift：window.webkit.messageHandlers.nativeHandler.postMessage("hello")
+        func userContentController(_ controller: WKUserContentController,
+                                   didReceive message: WKScriptMessage) {
+            print("From JS: \(message.body)")
+        }
+    }
+}
+
+// Swift 调用 JS
+webView.evaluateJavaScript("document.title") { result, error in
+    if let title = result as? String { print(title) }
+}
+```
+
+## HealthKit 进阶查询
+
+### HKStatisticsQuery（聚合统计）
+```swift
+let stepsType = HKQuantityType(.stepCount)
+let today = HKQuery.predicateForSamples(withStart: Calendar.current.startOfDay(for: .now), end: .now)
+
+let query = HKStatisticsQuery(quantityType: stepsType, quantitySamplePredicate: today, options: .cumulativeSum) {
+    _, stats, _ in
+    let totalSteps = stats?.sumQuantity()?.doubleValue(for: .count()) ?? 0
+    DispatchQueue.main.async { self.steps = Int(totalSteps) }
+}
+healthStore.execute(query)
+```
+
+### HKAnchoredObjectQuery（增量同步，iOS 17+ Descriptor）
+```swift
+let descriptor = HKAnchoredObjectQueryDescriptor(
+    predicates: [.quantitySample(type: HKQuantityType(.heartRate))],
+    anchor: savedAnchor
+)
+let results = try await descriptor.result(for: healthStore)
+let newSamples = results.addedSamples      // 新增样本
+let deletedObjects = results.deletedObjects // 已删除
+let newAnchor = results.newAnchor           // 保存用于下次增量
+```
+
+### 临床记录（FHIR，需 Clinical Health Records 权限）
+```swift
+let allergyType = HKObjectType.clinicalType(forIdentifier: .allergyRecord)!
+let query = HKSampleQuery(sampleType: allergyType, predicate: nil, limit: 100, sortDescriptors: nil) {
+    _, samples, _ in
+    let records = samples as? [HKClinicalRecord] ?? []
+    for record in records {
+        if let fhir = record.fhirResource {
+            let json = try? JSONSerialization.jsonObject(with: fhir.data) as? [String: Any]
+            // 解析 FHIR Condition / Medication / Procedure
+        }
+    }
+}
+healthStore.execute(query)
+```
+
+## CloudKit 订阅 + 批量操作
+
+### CKSubscription（远程变更推送通知）
+```swift
+let subscription = CKQuerySubscription(
+    recordType: "TodoItem",
+    predicate: NSPredicate(value: true),
+    subscriptionID: "all-todos",
+    options: [.firesOnRecordCreation, .firesOnRecordUpdate]
+)
+let info = CKSubscription.NotificationInfo()
+info.shouldSendContentAvailable = true   // 静默推送触发后台刷新
+subscription.notificationInfo = info
+try await database.save(subscription)
+```
+
+### CKQueryOperation（游标分页）
+```swift
+let query = CKQuery(recordType: "Item", predicate: NSPredicate(value: true))
+let operation = CKQueryOperation(query: query)
+operation.resultsLimit = 50
+
+var allRecords: [CKRecord] = []
+operation.recordMatchedBlock = { _, result in
+    if case .success(let record) = result { allRecords.append(record) }
+}
+operation.queryResultBlock = { result in
+    if case .success(let cursor) = result, let cursor {
+        // 还有更多数据，用 cursor 继续查询
+        let nextOp = CKQueryOperation(cursor: cursor)
+        // ... 递归或循环
+    }
+}
+database.add(operation)
 ```
 
 ## 常见坑点（2026 完整版）
