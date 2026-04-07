@@ -2187,6 +2187,308 @@ TimelineView(.periodic(from: .now, by: 1.0)) { timeline in
 }
 ```
 
+
+## 常用控件速查
+
+### 表单控件
+```swift
+Form {
+    Section("Account") {
+        TextField("Username", text: $username)
+            .textContentType(.username)
+            .onSubmit { login() }              // 键盘回车触发
+            .submitLabel(.done)                 // 回车键文字
+
+        SecureField("Password", text: $password)
+            .textContentType(.password)
+
+        DatePicker("Birthday", selection: $date, displayedComponents: .date)
+        MultiDatePicker("Dates", selection: $dates)
+
+        ColorPicker("Theme", selection: $color, supportsOpacity: false)
+
+        Stepper("Quantity: \(qty)", value: $qty, in: 1...99)
+
+        Picker("Language", selection: $lang) {
+            Text("English").tag("en")
+            Text("中文").tag("zh")
+        }
+        .pickerStyle(.menu)   // 或 .segmented, .wheel, .navigationLink
+
+        Toggle("Notifications", isOn: $notifyOn)
+        Slider(value: $volume, in: 0...1) { Text("Volume") }
+
+        LabeledContent("Version", value: "2.1.0")
+    }
+
+    Section("Status") {
+        Gauge(value: progress) { Text("Progress") }
+            .gaugeStyle(.accessoryCircular)
+        ProgressView(value: 0.7)
+    }
+}
+```
+
+### ZStack / overlay
+```swift
+ZStack(alignment: .bottomTrailing) {
+    Image("photo").resizable().scaledToFill()
+    Text("Badge").padding(6).background(.red).clipShape(Capsule())
+}
+
+// overlay 等效写法
+Image("photo")
+    .overlay(alignment: .bottomTrailing) {
+        Text("Badge").padding(6).background(.red).clipShape(Capsule())
+    }
+```
+
+### ToolbarItem
+```swift
+.toolbar {
+    ToolbarItem(placement: .primaryAction) {
+        Button("Save", action: save)
+    }
+    ToolbarItem(placement: .cancellationAction) {
+        Button("Cancel", role: .cancel) { dismiss() }
+    }
+    ToolbarItemGroup(placement: .bottomBar) {
+        Spacer()
+        Text("\(items.count) items")
+        Spacer()
+    }
+    ToolbarItem(placement: .keyboard) {
+        Button("Done") { focusedField = nil }  // 键盘上方按钮
+    }
+}
+```
+
+### ContextMenu + swipeActions
+```swift
+// 长按菜单
+Text(item.title)
+    .contextMenu {
+        Button("Copy", systemImage: "doc.on.doc") { copy(item) }
+        Button("Delete", systemImage: "trash", role: .destructive) { delete(item) }
+    } preview: {
+        ItemPreview(item: item)   // 自定义预览
+    }
+
+// 列表滑动操作
+List {
+    ForEach(items) { item in
+        Text(item.title)
+            .swipeActions(edge: .trailing) {
+                Button("Delete", role: .destructive) { delete(item) }
+                Button("Archive") { archive(item) }.tint(.orange)
+            }
+            .swipeActions(edge: .leading) {
+                Button("Pin") { pin(item) }.tint(.yellow)
+            }
+    }
+}
+```
+
+### ScrollViewReader + scrollTo
+```swift
+ScrollViewReader { proxy in
+    ScrollView {
+        LazyVStack {
+            ForEach(messages) { msg in
+                MessageRow(msg).id(msg.id)
+            }
+        }
+    }
+    .onChange(of: messages.count) { _, _ in
+        withAnimation {
+            proxy.scrollTo(messages.last?.id, anchor: .bottom)
+        }
+    }
+}
+
+// iOS 17+ scrollPosition
+@State private var scrollPosition: Int?
+ScrollView {
+    LazyVStack { ForEach(0..<100) { i in Text("Item \(i)").id(i) } }
+}
+.scrollPosition(id: $scrollPosition)
+.scrollTargetBehavior(.viewAligned)   // 吸附对齐
+.scrollTargetLayout()                  // 配合使用
+```
+
+### GeometryReader
+```swift
+GeometryReader { proxy in    // proxy: GeometryProxy
+    let width = proxy.size.width
+    let height = proxy.size.height
+    let safeTop = proxy.safeAreaInsets.top
+
+    HStack(spacing: 0) {
+        Color.red.frame(width: width * 0.3)
+        Color.blue.frame(width: width * 0.7)
+    }
+}
+```
+
+### DisclosureGroup / OutlineGroup / GroupBox
+```swift
+// 折叠展开
+DisclosureGroup("Advanced Settings") {
+    Toggle("Debug Mode", isOn: $debug)
+}
+
+// 多级树形结构
+OutlineGroup(data, children: \.children) { item in
+    Text(item.name)
+}
+
+// 带标题的分组框
+GroupBox("Statistics") {
+    LabeledContent("Total", value: "\(total)")
+    LabeledContent("Average", value: "\(average)")
+}
+```
+
+## @FocusState + 文件导入导出
+```swift
+// 焦点管理
+enum Field: Hashable { case email, password }
+@FocusState private var focusedField: Field?
+
+TextField("Email", text: $email)
+    .focused($focusedField, equals: .email)
+SecureField("Password", text: $password)
+    .focused($focusedField, equals: .password)
+Button("Login") { focusedField = nil }  // 收起键盘
+
+// 文件导入
+.fileImporter(isPresented: $showImporter, allowedContentTypes: [.json, .plainText]) { result in
+    switch result {
+    case .success(let url):
+        guard url.startAccessingSecurityScopedResource() else { return }
+        defer { url.stopAccessingSecurityScopedResource() }
+        let data = try Data(contentsOf: url)
+    case .failure(let error): print(error)
+    }
+}
+
+// 文件导出
+.fileExporter(isPresented: $showExporter, document: myDoc, contentType: .json) { result in
+    // handle result
+}
+```
+
+## SF Symbols 效果 + 触觉反馈
+```swift
+// symbolEffect 动画
+Image(systemName: "wifi")
+    .symbolEffect(.variableColor.iterative)      // 循环变色
+Image(systemName: "arrow.down.circle")
+    .symbolEffect(.bounce, value: downloadCount)  // 值变化时弹跳
+Image(systemName: "heart.fill")
+    .symbolRenderingMode(.multicolor)              // 多色渲染
+    .contentTransition(.symbolEffect(.replace))    // 符号切换动画
+
+// 触觉反馈（iOS 17+）
+Button("Tap") { action() }
+    .sensoryFeedback(.impact(weight: .medium), trigger: tapCount)
+// 可选：.success, .warning, .error, .selection, .impact, .increase, .decrease
+```
+
+## 隐私 + Sheet 控制 + 安全区域
+```swift
+// 敏感内容遮盖
+Text(bankBalance)
+    .privacySensitive()        // 锁屏 Widget 自动遮盖
+    .redacted(reason: .placeholder)  // 占位效果（加载中）
+
+// 禁止下拉关闭 Sheet
+.sheet(isPresented: $show) {
+    EditView()
+        .interactiveDismissDisabled(hasUnsavedChanges)
+}
+
+// 安全区域扩展
+.safeAreaInset(edge: .bottom) {
+    HStack { Button("Save") { } }.padding().background(.bar)
+}
+.safeAreaPadding(.horizontal, 20)
+
+// 容器相对尺寸（iOS 17+）
+Image("photo")
+    .containerRelativeFrame(.horizontal) { length, _ in length * 0.8 }
+```
+
+## ImageRenderer（View 导出为图片）
+```swift
+let renderer = ImageRenderer(content: MyChartView())
+renderer.scale = UIScreen.main.scale   // Retina 适配
+if let uiImage = renderer.uiImage {
+    UIImageWriteToSavedPhotosAlbum(uiImage, nil, nil, nil)
+}
+// 也支持导出 PDF
+if let data = renderer.render { _, renderer in renderer.addPages() } { }
+```
+
+## MapKit 标注
+```swift
+import MapKit
+
+Map {
+    Marker("Apple Park", coordinate: CLLocationCoordinate2D(latitude: 37.3349, longitude: -122.0090))
+        .tint(.red)
+    Annotation("Custom", coordinate: coord) {
+        Image(systemName: "star.fill").foregroundStyle(.yellow)
+            .padding(6).background(.blue).clipShape(Circle())
+    }
+    MapPolyline(coordinates: routeCoords).stroke(.blue, lineWidth: 3)
+}
+.mapStyle(.standard(elevation: .realistic))
+```
+
+## Swift 并发进阶
+```swift
+// async let 并行
+async let profile = fetchProfile()
+async let posts = fetchPosts()
+async let friends = fetchFriends()
+let (p, ps, f) = try await (profile, posts, friends)  // 并行等待
+
+// TaskGroup
+let results = try await withThrowingTaskGroup(of: Data.self) { group in
+    for url in urls {
+        group.addTask { try await URLSession.shared.data(from: url).0 }
+    }
+    var allData: [Data] = []
+    for try await data in group { allData.append(data) }
+    return allData
+}
+
+// Continuation 桥接回调
+func fetchLegacy() async throws -> String {
+    try await withCheckedThrowingContinuation { continuation in
+        legacyAPI { result, error in
+            if let error { continuation.resume(throwing: error) }
+            else { continuation.resume(returning: result!) }
+        }
+    }
+}
+
+// Sendable + nonisolated
+struct UserData: Sendable { let name: String }   // 值类型自动 Sendable
+
+actor DataStore {
+    var items: [Item] = []
+    nonisolated var description: String { "DataStore" }  // 无需 await
+}
+
+// 自定义 GlobalActor
+@globalActor actor DatabaseActor: GlobalActor {
+    static let shared = DatabaseActor()
+}
+@DatabaseActor func saveToDatabase() { }
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
