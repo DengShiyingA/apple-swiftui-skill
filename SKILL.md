@@ -2743,6 +2743,167 @@ actor DataStore {
 @DatabaseActor func saveToDatabase() { }
 ```
 
+
+## SwiftData 进阶（iOS 26 扩展文档）
+
+### Model 继承（iOS 26+）
+```swift
+@Model class Trip {
+    @Attribute(.preserveValueOnDeletion)   // 删除时保留审计记录
+    var name: String
+    var destination: String
+    @Relationship(deleteRule: .cascade, inverse: \BucketListItem.trip)
+    var bucketList: [BucketListItem] = []
+}
+
+@available(iOS 26, *)
+@Model class BusinessTrip: Trip {
+    var expenseCode: String
+    var perDiemRate: Double
+    @Relationship(deleteRule: .cascade, inverse: \DailyMileageRecord.trip)
+    var milesDriven: [DailyMileageRecord] = []
+}
+
+@available(iOS 26, *)
+@Model class PersonalTrip: Trip {
+    enum Reason: String, Codable { case family, wellness, reunion }
+    var reason: Reason
+}
+
+// 基类查询返回所有子类；类型过滤用 #Predicate
+@Query var allTrips: [Trip]                     // 包含 Business + Personal
+let bizOnly = allTrips.filter { $0 is BusinessTrip }
+```
+
+### Undo/Redo 支持
+```swift
+// App 入口一行启用
+.modelContainer(for: Item.self, isUndoEnabled: true)
+// 三指滑动自动支持撤销/重做，无需额外代码
+```
+
+### CloudKit iCloud 同步
+```swift
+let config = ModelConfiguration(
+    cloudKitDatabase: .private("iCloud.com.example.MyApp")
+)
+let container = try ModelContainer(for: Trip.self, configurations: config)
+// 自动双向同步到 iCloud，无需手动管理 CKRecord
+```
+
+## Control Widget（控制中心 / 锁屏 / Action 按钮）
+```swift
+import WidgetKit
+import AppIntents
+
+struct TimerToggle: ControlWidget {
+    static let kind = "com.app.timerToggle"
+
+    var body: some ControlWidgetConfiguration {
+        AppIntentControlConfiguration(kind: Self.kind, provider: TimerProvider()) { state in
+            ControlWidgetToggle(state.name, isOn: state.isRunning, action: ToggleTimerIntent(timer: state.timer))
+        }
+        .displayName("Timer")
+        .description("Start and stop a timer.")
+    }
+}
+
+struct ToggleTimerIntent: SetValueIntent {
+    static var title: LocalizedStringResource = "Toggle Timer"
+    @Parameter(title: "Timer") var timer: TimerEntity
+    @Parameter(title: "Running") var value: Bool
+    func perform() async throws -> some IntentResult { .result() }
+}
+```
+
+## App Intents 进阶（扩展文档）
+
+### Entity 属性查询 + Spotlight 索引
+```swift
+struct LandmarkEntity: AppEntity, IndexedEntity {
+    static var defaultQuery = LandmarkEntityQuery()
+
+    @Property(title: "Name")
+    var name: String
+
+    // Spotlight 自动索引
+    static func updateSpotlightIndex() {
+        let entities = LandmarkDataManager.shared.landmarks.map { LandmarkEntity(landmark: $0) }
+        CSSearchableIndex.default().indexAppEntities(entities)
+    }
+}
+
+// 属性查询（Shortcuts 可用 "Find landmarks where name contains ..."）
+struct LandmarkEntityQuery: EntityPropertyQuery {
+    func entities(matching predicates: [NSPredicate]) async throws -> [LandmarkEntity] {
+        // 根据谓词过滤
+    }
+}
+```
+
+### 参数消歧（多个匹配时让用户选择）
+```swift
+func perform() async throws -> some IntentResult {
+    let matches = findMatches(for: location)
+    if matches.count > 1 {
+        throw $location.needsDisambiguationError(
+            among: matches,
+            dialog: "Which location did you mean?"
+        )
+    }
+    return .result()
+}
+```
+
+## UIKit Trait 注册（iOS 17+，替代 traitCollectionDidChange）
+```swift
+override func viewDidLoad() {
+    super.viewDidLoad()
+    registerForTraitChanges([
+        UITraitHorizontalSizeClass.self,
+        UITraitVerticalSizeClass.self
+    ]) { (self: Self, previous: UITraitCollection) in
+        self.updateLayoutForCurrentTraitCollection()
+    }
+}
+// 类型安全 + 无需手动比较 previousTraitCollection
+```
+
+## Vision 进阶（人脸质量评分 + 姿态角）
+```swift
+import Vision
+
+// 人脸拍摄质量评分（0.0-1.0，综合光照/模糊/遮挡/角度）
+let qualityRequest = VNDetectFaceCaptureQualityRequest()
+let handler = VNImageRequestHandler(cgImage: cgImage)
+try handler.perform([qualityRequest])
+let quality = qualityRequest.results?.first?.faceCaptureQuality ?? 0  // 0.0-1.0
+
+// 人脸姿态角（roll/pitch/yaw）
+let poseRequest = VNDetectFaceRectanglesRequest()
+try handler.perform([poseRequest])
+if let face = poseRequest.results?.first {
+    let roll = face.roll?.doubleValue ?? 0    // 头部倾斜
+    let pitch = face.pitch?.doubleValue ?? 0  // 上下点头
+    let yaw = face.yaw?.doubleValue ?? 0      // 左右转头
+}
+```
+
+## ARKit 4K/HDR 视频捕获
+```swift
+// 4K 高清 AR 捕获
+guard let hiResFormat = ARWorldTrackingConfiguration.recommendedVideoFormatFor4KResolution else { return }
+var config = ARWorldTrackingConfiguration()
+config.videoFormat = hiResFormat
+config.videoHDRAllowed = true
+arView.session.run(config)
+
+// 随时捕获高分辨率帧
+arView.session.captureHighResolutionFrame { frame, error in
+    if let frame { saveHighResFrame(frame) }
+}
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
