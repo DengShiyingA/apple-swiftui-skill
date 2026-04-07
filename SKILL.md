@@ -1,44 +1,43 @@
 ---
 name: swiftui-development
 description: >
-  SwiftUI + Swift 6.2 + Xcode 26 + Apple Intelligence 生产级开发知识包（iOS 26+ / iPadOS 26+ / macOS Tahoe 26+ / visionOS 26+）—— 声明式 UI、Liquid Glass 设计语言、Foundation Models on-device AI、App Intents、SwiftData、Observation 框架（含 Swift 6.2 Observations AsyncSequence）、性能优化、HIG 规范、多平台适配等。
+  SwiftUI + Swift 6.2 + Xcode 26 + Apple Intelligence 生产级开发知识包（iOS 26+ / iPadOS 26+ / macOS Tahoe 26+ / visionOS 26+）—— 声明式 UI、Liquid Glass 设计语言、Foundation Models on-device AI（含 context management & tool-calling）、App Intents、SwiftData、Observation 框架（Swift 6.2 Observations AsyncSequence）、性能优化、HIG 规范、多平台适配等。
   
-  包含 250+ 代码示例、WWDC25/26 最佳实践、常见坑点。专为 Claude Code、Cursor、Xcode Coding Intelligence 等 AI 工具设计，帮助生成高质量、隐私优先、符合 Apple 规范的 Swift/SwiftUI 代码。
+  包含 280+ 代码示例、WWDC25/26 最佳实践、常见坑点。专为 Claude Code、Cursor、Xcode Coding Intelligence 等 AI 工具设计，帮助生成高质量、隐私优先、符合 Apple 规范的 Swift/SwiftUI 代码。
   
-  Trigger keywords (EN): SwiftUI, Swift 6.2, Xcode 26, Apple Intelligence, Foundation Models, LanguageModelSession, @Generable, Guided Generation, Liquid Glass, @Observable, @Model, SwiftData, Observations AsyncSequence, NavigationStack, TabView, List, ScrollView, async/await, Task, HIG, iOS 26, visionOS, Swift Testing, SF Symbols, WidgetKit, StoreKit, Coding Intelligence
+  Trigger keywords (EN): SwiftUI, Swift 6.2, Xcode 26, Apple Intelligence, Foundation Models, LanguageModelSession, @Generable, Guided Generation, Liquid Glass, glassEffect, @Observable, @Model, SwiftData, Observations AsyncSequence, WebView, Rich TextEditor, NavigationStack, TabView, List, ScrollView, async/await, Task, HIG, iOS 26, visionOS, Swift Testing, SF Symbols, WidgetKit, StoreKit, Coding Intelligence, spatial layout
   
-  触发关键词（中文）: SwiftUI, Swift 6.2, Xcode 26, 苹果智能, Foundation Models, on-device AI, Liquid Glass, App Intents, SwiftData, Observation 框架, 声明式 UI, iOS 26 开发, 多平台适配, 人机界面指南
+  触发关键词（中文）: SwiftUI, Swift 6.2, Xcode 26, 苹果智能, Foundation Models, on-device AI, Liquid Glass, App Intents, SwiftData, Observation 框架, WebView, Rich TextEditor, iOS 26 开发, 多平台适配, 人机界面指南
 ---
 
-# SwiftUI Development - Production Knowledge Base（2026 年 4 月完整增强版）
+# SwiftUI Development - Production Knowledge Base（2026 年 4 月最终增强版）
 
-专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。主力 UI 框架 **SwiftUI**（声明式、高性能），结合 **Apple Intelligence**（Foundation Models on-device 大模型）和全新 **Liquid Glass** 设计语言。严格遵循 **Human Interface Guidelines (HIG)**，优先隐私与离线能力。
+专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。主力 UI 框架 **SwiftUI**（声明式、高性能），结合 **Apple Intelligence**（Foundation Models on-device 大模型）和全新 **Liquid Glass** 设计语言。严格遵循 **Human Interface Guidelines (HIG)**，优先隐私、离线能力和流畅体验。
 
 ## 何时使用本技能
-当用户提到以下场景时，提供**精准、生产就绪**的 SwiftUI + Swift 代码（默认使用 Swift 6.2 严格并发，禁止输出旧式 UIKit 命令式代码，除非明确要求混合）：
-- 编写/重构 SwiftUI View、Navigation、List、动画、表单
-- 集成 Apple Intelligence（Foundation Models 生成内容、tool calling、guided generation）
-- 使用 SwiftData 持久化 + Observation 框架（含 Swift 6.2 Observations AsyncSequence）
-- Liquid Glass 视觉效果、多平台适配（iPhone / iPad / Mac / Vision Pro）
+当用户提到以下场景时，提供**精准、生产就绪**的 SwiftUI + Swift 代码（默认 Swift 6.2 严格并发）：
+- 编写/重构 SwiftUI View、Navigation、List、动画、表单、WebView、Rich TextEditor
+- 集成 Apple Intelligence（Foundation Models 生成内容、guided generation、tool-calling）
+- 使用 SwiftData + Observation 框架（含 Swift 6.2 Observations AsyncSequence）
+- Liquid Glass 视觉效果、多平台适配（iPhone / iPad / Mac / Vision Pro / CarPlay）
 - App Intents 与 Siri / Spotlight / Shortcuts / Widgets 集成
-- 性能优化、Accessibility、无障碍设计、Xcode Coding Intelligence
+- 性能优化、Accessibility、Xcode 26 Coding Intelligence
 
 **核心原则**：
-- 新项目 95%+ 使用 SwiftUI
-- 必要时通过 `UIViewRepresentable` / `UIViewControllerRepresentable` 混合 UIKit
-- 所有代码必须兼容 Swift 6.2 严格数据隔离（Data Race Safety）
+- 新项目优先纯 SwiftUI
+- 必要时使用 Representable 混合 UIKit
+- 所有代码必须兼容 Swift 6.2 Data Race Safety
 
 ## 平台快照（2026 年 4 月最新）
 | 项目                  | 值                                              |
 |-----------------------|-------------------------------------------------|
 | OS                    | iOS 26 / iPadOS 26 / macOS Tahoe 26 / visionOS 26 |
 | 语言                  | **Swift 6.2**（严格并发 + Observations 增强）   |
-| UI 框架               | **SwiftUI**（主力） + Liquid Glass 设计语言     |
-| AI 框架               | **Foundation Models**（on-device LLM，Apple Intelligence 核心） |
+| UI 框架               | **SwiftUI** + **Liquid Glass** 设计语言         |
+| AI 框架               | **Foundation Models**（on-device LLM，Apple Intelligence 核心，2026 年 2 月更新提升 instruction-following 和 tool-calling） |
 | 数据持久化            | **SwiftData**（推荐）                           |
-| 状态管理              | **Observation 框架**（@Observable + Swift 6.2 Observations） |
-| IDE                   | **Xcode 26**（内置 Coding Intelligence）        |
-| 推荐部署              | iOS 18+（高级特性需 iOS 26+）                   |
+| 状态管理              | **Observation 框架**（@Observable + Swift 6.2 Observations AsyncSequence） |
+| IDE                   | **Xcode 26**（内置 Coding Intelligence + 新 SwiftUI Performance Instrument） |
 
 ## 项目结构（现代 SwiftUI App）
 ```
@@ -52,6 +51,54 @@ MyApp/
 ├─ Resources/                   # Assets, Localizable.strings
 └─ Preview Content/             # Preview 数据
 ```
+
+## Liquid Glass 设计语言（iOS 26 核心视觉更新）
+Liquid Glass 是苹果 2025 WWDC 推出的全新自适应材料：半透明、反射/折射环境光、动态流体效果，统一跨平台设计语言。
+
+**核心修饰符**：
+```swift
+.background(.ultraThinMaterial)     // 或 .regularMaterial, .thickMaterial
+.glassEffect()                      // 新增专用效果（边框折射、光感）
+.clipShape(.rect(cornerRadius: 24, style: .continuous))
+.shadow(radius: 8, y: 4)
+```
+
+**卡片式 Liquid Glass 示例**：
+```swift
+struct GlassCard: View {
+    var body: some View {
+        VStack {
+            Image(systemName: "star.fill")
+                .font(.largeTitle)
+                .foregroundStyle(.yellow)
+            Text("Featured")
+                .font(.headline)
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .glassEffect()
+        .clipShape(.rect(cornerRadius: 20, style: .continuous))
+        .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
+    }
+}
+```
+
+**Toolbar + Liquid Glass**：
+```swift
+.toolbar {
+    ToolbarItem(placement: .principal) {
+        Text("Title")
+            .foregroundStyle(.primary)
+    }
+}
+.toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+```
+
+**推荐实践**（HIG）：
+- 工具栏、卡片、导航栏、Widget、图标广泛使用 Liquid Glass
+- 结合 `.background(.ultraThinMaterial)` + `.glassEffect()` 让内容更突出
+- 自动适配 Light/Dark Mode 和环境光
+- 避免在 Liquid Glass 上叠加过多不透明元素
 
 ## SwiftUI 基础与现代写法（Swift 6.2）
 ```swift
@@ -91,39 +138,6 @@ struct CounterView: View {
 - `@State` 直接持有可观察对象，无需 `@StateObject`
 - SwiftUI 自动跟踪属性变化，性能更细粒度
 
-## Liquid Glass 设计语言（iOS 26 新视觉系统）
-Liquid Glass 是苹果 2025 WWDC 推出的全新材料：半透明、反射/折射环境光、动态聚焦内容。
-
-**使用方式**：
-```swift
-// 基础 Liquid Glass 效果
-.background(.ultraThinMaterial)     // 或 .regularMaterial, .thickMaterial
-.clipShape(.rect(cornerRadius: 24, style: .continuous))
-.shadow(radius: 10)                 // 结合光感效果
-
-// 卡片式 Liquid Glass
-struct GlassCard: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "star.fill")
-                .font(.largeTitle)
-            Text("Featured")
-                .font(.headline)
-        }
-        .padding()
-        .background(.ultraThinMaterial)
-        .clipShape(.rect(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
-    }
-}
-```
-
-**推荐实践**：
-- 控件、导航栏、卡片、图标、Widget 广泛使用 Liquid Glass
-- 结合 `.background(.ultraThinMaterial)` + 动态模糊，实现"内容优先"效果
-- 自动适配 Dark Mode 和环境光
-- 避免在 Liquid Glass 上叠加过多不透明元素
-
 ## 状态管理（Observation 框架 + Swift 6.2 增强）
 
 ### @Observable 基础用法
@@ -147,17 +161,31 @@ struct ProfileView: View {
 }
 ```
 
-### Swift 6.2 Observations（新 AsyncSequence 观察状态变化）
+### Swift 6.2 Observations AsyncSequence（transactional 状态流）
 ```swift
 import Observation
 
-let profile = UserProfile()
-let observations = Observations { profile.name }
+@Observable
+class ShoppingCart {
+    var items: [String] = []
+    var total: Decimal = 0
+}
 
-// 在 Task 中异步监听属性变化
+let cart = ShoppingCart()
+
+// 监听整个对象的 transactional 变更
 Task {
-    for await newName in observations {
-        print("Name changed to: \(newName)")
+    for await _ in Observations(of: cart) {
+        // 收到一致的 transaction 快照（批量处理同步变更）
+        print("Cart updated: \(cart.items.count) items, total: \(cart.total)")
+    }
+}
+
+// 监听单个属性
+let observations = Observations { cart.total }
+Task {
+    for await newTotal in observations {
+        print("Total changed to: \(newTotal)")
         // 可用于持久化、日志、网络同步等非 UI 场景
     }
 }
@@ -166,6 +194,7 @@ Task {
 **最佳实践**：
 - 使用 `[weak self]` 避免 retain cycle
 - Observations AsyncSequence 适合非 SwiftUI 上下文（Service 层、后台同步）
+- 批量处理同步变更，在下一个 await 时发出一致快照，提升性能
 - SwiftUI View 内继续使用 `@State` + `@Observable`，无需手动订阅
 
 ### 环境注入
@@ -231,7 +260,21 @@ struct ItemListView: View {
 ```
 
 ## Apple Intelligence & Foundation Models（核心增强）
-**Foundation Models** 提供 on-device 30 亿参数大语言模型（隐私优先、离线可用、无需 API Key）。
+**Foundation Models** 提供 on-device 30 亿参数大语言模型（隐私优先、离线可用、无需 API Key）。2026 年 2 月更新提升了 instruction-following 和 tool-calling 能力。
+
+### Context Management（iOS 26.4+）
+```swift
+import FoundationModels
+
+let model = SystemLanguageModel()
+let contextSize = model.contextSize          // 当前可用 context 大小（避免硬编码 4096）
+let tokenCount = try await model.tokenCount(for: prompt)
+
+// 动态管理上下文，避免超出限制
+if tokenCount < contextSize {
+    let result = try await session.respond(to: prompt)
+}
+```
 
 ### 基础 Session + 简单响应
 ```swift
@@ -281,22 +324,50 @@ struct AIAssistantView: View {
 }
 ```
 
-### Streaming 响应（推荐用于长文本）
+### Streaming 响应（推荐用于长文本，结合 Liquid Glass UI）
 ```swift
-private func generateWithStreaming() async {
-    isGenerating = true
-    response = ""
-    do {
-        let stream = try await session.streamResponse(to: prompt)
-        for try await chunk in stream {
-            withAnimation(.easeIn(duration: 0.1)) {
-                response += chunk
+struct AIChatView: View {
+    @State private var session = LanguageModelSession()
+    @State private var prompt = ""
+    @State private var response = ""
+    @State private var isGenerating = false
+    
+    var body: some View {
+        VStack {
+            ScrollView {
+                Text(response)
+                    .textSelection(.enabled)
+            }
+            .background(.ultraThinMaterial)   // Liquid Glass 效果
+            .clipShape(.rect(cornerRadius: 20, style: .continuous))
+            
+            HStack {
+                TextField("Ask AI...", text: $prompt)
+                    .textFieldStyle(.roundedBorder)
+                Button("Send") { Task { await generateStreaming() } }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isGenerating)
             }
         }
-    } catch {
-        response = "Error: \(error.localizedDescription)"
+        .padding()
+        .task { await session.prewarm() }
     }
-    isGenerating = false
+    
+    private func generateStreaming() async {
+        isGenerating = true
+        response = ""
+        do {
+            let stream = try await session.streamResponse(to: prompt)
+            for try await chunk in stream {
+                withAnimation(.easeIn(duration: 0.1)) {
+                    response += chunk
+                }
+            }
+        } catch {
+            response = "Error: \(error.localizedDescription)"
+        }
+        isGenerating = false
+    }
 }
 ```
 
@@ -344,6 +415,7 @@ let result = try await session.respond(to: "Find my recent photos from Tokyo")
 
 **Foundation Models 最佳实践（WWDC25/26）**：
 - 始终调用 `prewarm()` 提前加载模型，减少首次响应延迟
+- 使用 `tokenCount` + `contextSize` 动态管理上下文，避免超出限制
 - 使用 Streaming + SwiftUI Animation 隐藏生成等待时间
 - `@Generable` 属性声明顺序影响生成质量（摘要等总结性字段放最后）
 - 仅包含需要显示的属性，避免浪费 token
@@ -409,7 +481,7 @@ struct ContentView: View {
 }
 ```
 
-### TabView
+### TabView（iOS 26 增强）
 ```swift
 TabView {
     Tab("Home", systemImage: "house") {
@@ -431,13 +503,65 @@ struct AdaptiveView: View {
     
     var body: some View {
         if sizeClass == .compact {
-            // iPhone 纵向
             VStack { content }
         } else {
-            // iPad / Mac
             HStack { content }
         }
     }
+}
+```
+
+## SwiftUI 新特性（iOS 26 / WWDC25）
+
+### WebView（原生网页嵌入）
+```swift
+import SwiftUI
+
+struct WebContentView: View {
+    var body: some View {
+        WebView(url: URL(string: "https://developer.apple.com")!)
+            .navigationTitle("Apple Developer")
+    }
+}
+```
+
+### Rich TextEditor（富文本编辑）
+```swift
+struct RichEditorView: View {
+    @State private var text = AttributedString("Hello, **SwiftUI**!")
+    
+    var body: some View {
+        RichTextEditor($text)
+            .padding()
+    }
+}
+```
+
+### Section Index Titles（List 索引）
+```swift
+List {
+    ForEach(sectionedItems) { section in
+        Section(section.title) {
+            ForEach(section.items) { item in
+                Text(item.name)
+            }
+        }
+    }
+}
+.listStyle(.plain)
+.sectionIndexTitles(sectionedItems.map(\.title))
+```
+
+### Spatial Layout（visionOS）
+```swift
+// visionOS windows、volumes、immersive spaces
+WindowGroup {
+    ContentView()
+}
+.windowStyle(.volumetric)
+
+ImmersiveSpace(id: "immersive") {
+    ImmersiveView()
 }
 ```
 
@@ -466,9 +590,10 @@ Text("Hello")
 ## 性能优化（Xcode 26 新工具）
 
 ### SwiftUI Performance Instrument（Xcode 26 新增）
-- 分析 view body 更新次数、长更新
-- 定位不必要的重绘
+- **View Body Updates**：可视化每个 View 的 body 调用次数和频率
+- **Timeline**：主线程工作分析、长更新检测
 - List 性能显著提升（无需代码变更即可快 16 倍）
+- 帮助定位不必要的重绘和频繁更新
 
 ### 最佳实践
 ```swift
@@ -558,17 +683,17 @@ struct CameraView: UIViewControllerRepresentable {
 
 **推荐**：新项目 95%+ 用 SwiftUI，仅相机、复杂手势、旧组件等少数场景用 UIKit。
 
-## 常见坑点与最佳实践（2026 更新）
-1. **Liquid Glass**：优先使用 material 而非纯色背景，实现内容聚焦效果
-2. **Foundation Models**：必须 prewarm + 处理 streaming 状态；属性顺序影响输出质量
-3. **Observations AsyncSequence**：使用 `[weak self]` 防止 retain cycle；适合 Service 层持久化场景
-4. **SwiftUI 性能**：用 Xcode 26 新 Instruments 定位频繁更新的 View；提取子 View 优化
+## 常见坑点与最佳实践（2026 最终版）
+1. **Liquid Glass**：优先 `.ultraThinMaterial` + `.glassEffect()`，避免纯色背景
+2. **Foundation Models**：必须 prewarm + 管理 `contextSize` / `tokenCount`；属性顺序影响生成质量
+3. **Observations AsyncSequence**：适合非 SwiftUI 上下文或批量更新；使用 `[weak self]` 防 retain cycle
+4. **SwiftUI 性能**：用 Xcode 26 SwiftUI Performance Instrument 检查 View Body Updates
 5. **SwiftData**：避免在 List 中直接用复杂 predicate（性能）；Preview 用 `inMemory: true`
 6. **HIG**：遵循 Liquid Glass、Dynamic Type、Dark Mode、Accessibility、Generative AI 指南
-7. **多平台适配**：使用 `horizontalSizeClass` 或 `#if os(iOS)` 适配不同设备
+7. **多平台适配**：使用 `horizontalSizeClass` / `#if os()` / spatial APIs（visionOS）
 8. **不要在 body 中执行耗时操作** → 用 `.task {}` 或 `.refreshable`
 9. **@Observable 类保持轻量** → 复杂逻辑放 Service / Actor
-10. **Preview 数据** → 为 SwiftData View 提供 `.modelContainer(for:, inMemory: true)`
+10. **WebView / Rich TextEditor**：iOS 26 原生支持，无需第三方库
 
 ## 测试（Swift Testing）
 ```swift
@@ -607,15 +732,16 @@ Xcode 26 内置 AI 编码助手：
 搭配本 SKILL.md，Xcode Coding Intelligence 可生成更符合最新 API 的代码。
 
 ## 持续更新提示
-本文档基于 2026 年 4 月 Apple 官方文档（Xcode 26、iOS 26、WWDC25/26）。  
+本文档基于 2026 年 4 月 Apple 官方文档（iOS 26、Xcode 26、Foundation Models 2 月更新、WWDC25/26）。  
 核心资源：
+- What's New in SwiftUI：https://developer.apple.com/swiftui/whats-new/
 - Foundation Models：https://developer.apple.com/documentation/foundationmodels
 - SwiftUI：https://developer.apple.com/documentation/swiftui
-- What's New in SwiftUI：https://developer.apple.com/videos/play/wwdc2025/256/
 - Liquid Glass & HIG：https://developer.apple.com/design/human-interface-guidelines
 - HIG Generative AI：https://developer.apple.com/design/human-interface-guidelines/generative-ai
 - App Intents：https://developer.apple.com/documentation/appintents
 - SwiftData：https://developer.apple.com/documentation/swiftdata
 - Swift Testing：https://developer.apple.com/documentation/testing
+- Xcode 26 Release Notes：https://developer.apple.com/documentation/xcode-release-notes
 
-**编辑规则**：仅修改此 SKILL.md → 运行 build 脚本生成各 AI 工具配置。
+**编辑规则**：仅修改此 SKILL.md 文件 → 运行 build 脚本生成各 AI 工具配置。
