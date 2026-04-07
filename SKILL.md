@@ -3831,6 +3831,124 @@ if dcDevice.isSupported {
 }
 ```
 
+
+## Swift 6 语言特性
+```swift
+// Typed Throws（Swift 6+，类型化错误）
+enum AppError: Error { case notFound, unauthorized }
+func load() throws(AppError) -> Data {
+    throw .notFound   // 编译器强制只能抛出 AppError
+}
+do throws(AppError) {
+    let data = try load()
+} catch .notFound { /* 精确匹配 */ }
+
+// ~Copyable（不可拷贝类型 / Move-Only）
+struct FileHandle: ~Copyable {
+    let fd: Int32
+    consuming func close() { /* fd 被消费后不可再使用 */ }
+    borrowing func read() -> Data { /* 只读借用 */ }
+}
+
+// Parameter Packs（变参泛型）
+func all<each T: Equatable>(of value: repeat each T, equalTo other: repeat each T) -> Bool {
+    for (a, b) in repeat (each value, each other) {
+        guard a == b else { return false }
+    }
+    return true
+}
+```
+
+## SwiftUI 修饰符补全
+```swift
+// === Scroll 控制 ===
+ScrollView {
+    content
+}
+.scrollIndicators(.hidden)            // 隐藏滚动条
+.scrollDismissesKeyboard(.interactively)  // 滚动时渐进收起键盘
+.scrollBounceBehavior(.basedOnSize)   // 内容不足时禁止弹跳
+.defaultScrollAnchor(.bottom)         // 默认锚定底部（聊天场景）
+.contentMargins(.horizontal, 20)      // 内容区域边距
+
+// === Presentation 自定义 ===
+.sheet(isPresented: $show) {
+    DetailView()
+        .presentationBackground(.ultraThinMaterial)   // 半透明背景
+        .presentationCornerRadius(24)                  // 圆角
+}
+
+// === 文本输入 ===
+TextField("Email", text: $email)
+    .textContentType(.emailAddress)
+    .textInputAutocapitalization(.never)
+    .autocorrectionDisabled()
+
+// === 内容形状 ===
+Button(action: tap) { content }
+    .contentShape(.rect)              // 扩展可点击区域到整个矩形
+    .hoverEffect(.lift)               // iPad 指针悬停效果
+
+// === Dynamic Type 限制 ===
+Text("Fixed")
+    .dynamicTypeSize(.medium ... .xxxLarge)  // 限制字体缩放范围
+
+// === Scene 生命周期 ===
+@Environment(\.scenePhase) private var scenePhase
+.onChange(of: scenePhase) { _, newPhase in
+    switch newPhase {
+    case .active: refreshData()
+    case .inactive: saveState()
+    case .background: scheduleBackgroundTask()
+    @unknown default: break
+    }
+}
+
+// === MeshGradient（iOS 18+，网格渐变）===
+MeshGradient(width: 3, height: 3, points: [
+    .init(0, 0), .init(0.5, 0), .init(1, 0),
+    .init(0, 0.5), .init(0.5, 0.5), .init(1, 0.5),
+    .init(0, 1), .init(0.5, 1), .init(1, 1)
+], colors: [
+    .red, .purple, .indigo,
+    .orange, .cyan, .blue,
+    .yellow, .green, .mint
+])
+
+// === 几何变化监听（iOS 18+）===
+.onGeometryChange(for: CGSize.self) { proxy in proxy.size } action: { newSize in
+    containerSize = newSize
+}
+
+// === Map 进阶 ===
+import MapKit
+@State private var cameraPosition: MapCameraPosition = .automatic
+Map(position: $cameraPosition) {
+    UserAnnotation()                   // 当前用户位置
+    // Marker, Annotation 等
+}
+.mapControls {
+    MapUserLocationButton()            // 定位按钮
+    MapCompass()                        // 指南针
+    MapScaleView()                      // 比例尺
+}
+
+// === 不等圆角矩形 ===
+UnevenRoundedRectangle(topLeadingRadius: 20, bottomTrailingRadius: 20)
+    .fill(.blue)
+
+// === 旧式状态管理（迁移参考，新代码用 @Observable）===
+// @StateObject → @State + @Observable
+// @ObservedObject → 直接传入 @Observable 对象
+// @EnvironmentObject → @Environment + @Observable
+// @Published → @Observable 类中的普通属性
+
+// === WidgetKit 补充 ===
+// widgetURL: 点击 Widget 时打开的 deep link
+.widgetURL(URL(string: "myapp://item/\(item.id)")!)
+// configurationDisplayName + supportedFamilies 在 Widget 定义中
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
