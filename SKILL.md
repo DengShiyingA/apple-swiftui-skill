@@ -925,19 +925,389 @@ func titleNotEmpty(title: String) {
 }
 ```
 
+
+## AVFoundation（音视频）
+
+### 视频播放
+```swift
+import AVKit
+
+struct VideoView: View {
+    @State private var player = AVPlayer(url: Bundle.main.url(forResource: "demo", withExtension: "mp4")!)
+    var body: some View {
+        VideoPlayer(player: player)
+            .frame(height: 300)
+            .onAppear { player.play() }
+            .onDisappear { player.pause() }
+    }
+}
+```
+
+### 相机拍摄（AVCaptureSession，用 actor 隔离）
+```swift
+actor CaptureService {
+    private let session = AVCaptureSession()
+    private let photoOutput = AVCapturePhotoOutput()
+
+    func setUp() throws {
+        let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)!
+        let input = try AVCaptureDeviceInput(device: device)
+        session.sessionPreset = .photo
+        if session.canAddInput(input) { session.addInput(input) }
+        if session.canAddOutput(photoOutput) { session.addOutput(photoOutput) }
+        session.startRunning()
+    }
+}
+
+// 相机权限
+var isAuthorized: Bool {
+    get async {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        if status == .notDetermined {
+            return await AVCaptureDevice.requestAccess(for: .video)
+        }
+        return status == .authorized
+    }
+}
+
+// SwiftUI 预览层
+struct CameraPreview: UIViewRepresentable {
+    let session: AVCaptureSession
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        let layer = AVCaptureVideoPreviewLayer(session: session)
+        layer.videoGravity = .resizeAspectFill
+        layer.frame = view.bounds
+        view.layer.addSublayer(layer)
+        return view
+    }
+    func updateUIView(_ uiView: UIView, context: Context) {}
+}
+```
+
+### 文字转语音
+```swift
+let utterance = AVSpeechUtterance(string: "Hello, SwiftUI!")
+utterance.rate = 0.57
+utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN")
+AVSpeechSynthesizer().speak(utterance)
+```
+
+## CoreML + Vision
+
+### CoreML 推理
+```swift
+import CoreML
+
+// 编译并缓存模型（下载后执行一次）
+let compiledURL = try await MLModel.compileModel(at: downloadedModelURL)
+let model = try MLModel(contentsOf: compiledURL)
+let prediction = try model.prediction(from: input)
+```
+
+### Vision 文字识别（OCR）
+```swift
+import Vision
+
+func recognizeText(in image: UIImage) async throws -> [String] {
+    guard let cgImage = image.cgImage else { return [] }
+    return try await withCheckedThrowingContinuation { continuation in
+        let request = VNRecognizeTextRequest { req, error in
+            if let error { continuation.resume(throwing: error); return }
+            let strings = (req.results as? [VNRecognizedTextObservation] ?? [])
+                .compactMap { $0.topCandidates(1).first?.string }
+            continuation.resume(returning: strings)
+        }
+        request.recognitionLevel = .accurate
+        try? VNImageRequestHandler(cgImage: cgImage).perform([request])
+    }
+}
+```
+
+### Vision 人脸检测
+```swift
+let request = VNDetectFaceRectanglesRequest { req, _ in
+    guard let faces = req.results as? [VNFaceObservation] else { return }
+    for face in faces {
+        print("Face bounding box: \(face.boundingBox)")
+    }
+}
+try VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up).perform([request])
+```
+
+### Vision + CoreML（图像分类）
+```swift
+let visionModel = try VNCoreMLModel(for: MLModel(contentsOf: modelURL))
+let request = VNCoreMLRequest(model: visionModel) { req, _ in
+    guard let results = req.results as? [VNRecognizedObjectObservation] else { return }
+    let top = results.first?.labels.first
+    print("\(top?.identifier ?? "unknown") (\(top?.confidence ?? 0))")
+}
+try VNImageRequestHandler(cgImage: cgImage).perform([request])
+```
+
+## ARKit
+```swift
+import ARKit
+import RealityKit
+
+// 基础世界追踪 + 平面检测
+let config = ARWorldTrackingConfiguration()
+config.planeDetection = [.horizontal, .vertical]
+config.environmentTexturing = .automatic
+arView.session.run(config)
+
+// 协同 AR（多人共享空间）
+config.isCollaborationEnabled = true
+func session(_ session: ARSession, didOutputCollaborationData data: ARSession.CollaborationData) {
+    let encoded = try? NSKeyedArchiver.archivedData(withRootObject: data, requiringSecureCoding: true)
+    multipeerSession.sendToAllPeers(encoded, reliably: data.priority == .critical)
+}
+
+// 面部追踪（前置摄像头）
+guard ARWorldTrackingConfiguration.supportsUserFaceTracking else { return }
+var faceConfig = ARWorldTrackingConfiguration()
+faceConfig.userFaceTrackingEnabled = true
+// 读取混合形状（表情驱动）
+let blendShapes = faceAnchor.blendShapes
+let eyeBlink = blendShapes[.eyeBlinkLeft] as? Float ?? 0
+```
+
+## CoreImage（图像处理）
+```swift
+import CoreImage.CIFilterBuiltins
+
+// CIContext 创建一次，全局复用（昂贵操作）
+let ciContext = CIContext()
+
+// 滤镜链（自动合并优化）
+func applyFilters(to image: UIImage) -> UIImage? {
+    guard let ciImage = CIImage(image: image) else { return nil }
+
+    let sepia = CIFilter.sepiaTone()
+    sepia.inputImage = ciImage
+    sepia.intensity = 0.9
+
+    let bloom = CIFilter.bloom()
+    bloom.inputImage = sepia.outputImage
+    bloom.intensity = 1.0
+    bloom.radius = 10
+
+    guard let output = bloom.outputImage,
+          let cgImage = ciContext.createCGImage(output, from: output.extent) else { return nil }
+    return UIImage(cgImage: cgImage)
+}
+
+// SwiftUI Canvas 自定义绘制
+Canvas { context, size in
+    context.fill(Path(ellipseIn: CGRect(origin: .zero, size: size)), with: .color(.blue))
+    context.stroke(Path { p in p.move(to: .zero); p.addLine(to: CGPoint(x: size.width, y: size.height)) },
+                   with: .color(.red), lineWidth: 2)
+}
+```
+
+## SafariServices + OAuth
+```swift
+import SafariServices
+import AuthenticationServices
+
+// SFSafariViewController（保持用户 cookie/session）
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        SFSafariViewController(url: url)
+    }
+    func updateUIViewController(_ vc: SFSafariViewController, context: Context) {}
+}
+
+// ASWebAuthenticationSession（OAuth 登录）
+func startOAuth() {
+    let authURL = URL(string: "https://provider.com/oauth/authorize?client_id=xxx")!
+    let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: "myapp") { url, error in
+        guard let url else { return }
+        // 从 url 提取 code，换取 token
+    }
+    session.presentationContextProvider = self
+    session.prefersEphemeralWebBrowserSession = true
+    session.start()
+}
+```
+
+## EventKit（日历 / 提醒）
+```swift
+import EventKit
+
+let eventStore = EKEventStore()
+
+// iOS 17+ 三种权限级别
+func requestCalendarAccess() async throws {
+    // 写入权限（低打扰）
+    try await eventStore.requestWriteOnlyAccessToEvents()
+}
+
+// 创建事件
+func createEvent(title: String, start: Date, end: Date) throws {
+    let event = EKEvent(eventStore: eventStore)
+    event.calendar = eventStore.defaultCalendarForNewEvents
+    event.title = title
+    event.startDate = start
+    event.endDate = end
+    try eventStore.save(event, span: .thisEvent)
+}
+
+// 监听日历变更
+for await _ in NotificationCenter.default.notifications(named: .EKEventStoreChanged) {
+    // 重新获取事件
+}
+```
+
+## Contacts（通讯录）
+```swift
+import Contacts
+import ContactsUI
+
+// iOS 18+ ContactAccessButton（无需完整权限）
+ContactAccessButton(queryString: searchText) { identifiers in
+    // 用户选择的联系人 identifier
+}
+
+// 获取联系人
+func fetchContacts() throws -> [CNContact] {
+    let store = CNContactStore()
+    let request = CNContactFetchRequest(keysToFetch: [
+        CNContactGivenNameKey as CNKeyDescriptor,
+        CNContactFamilyNameKey as CNKeyDescriptor,
+        CNContactEmailAddressesKey as CNKeyDescriptor
+    ] as [CNKeyDescriptor])
+    var contacts: [CNContact] = []
+    try store.enumerateContacts(with: request) { contact, _ in contacts.append(contact) }
+    return contacts
+}
+```
+
+## Network（连接监控）
+```swift
+import Network
+
+// 网络状态监控
+let monitor = NWPathMonitor()
+monitor.pathUpdateHandler = { path in
+    DispatchQueue.main.async {
+        let isConnected = path.status == .satisfied
+        let isWifi = path.usesInterfaceType(.wifi)
+        let isCellular = path.usesInterfaceType(.cellular)
+    }
+}
+monitor.start(queue: .global(qos: .background))
+
+// 不需要时取消
+// monitor.cancel()
+```
+
+## BackgroundTasks
+```swift
+import BackgroundTasks
+
+// 注册（在 App init 或 didFinishLaunching 中调用）
+BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.app.refresh", using: nil) { task in
+    guard let task = task as? BGAppRefreshTask else { return }
+    Task {
+        do {
+            try await refreshContent()
+            task.setTaskCompleted(success: true)
+        } catch {
+            task.setTaskCompleted(success: false)
+        }
+    }
+    task.expirationHandler = { task.setTaskCompleted(success: false) }
+}
+
+// 调度刷新
+func scheduleAppRefresh() throws {
+    let request = BGAppRefreshTaskRequest(identifier: "com.app.refresh")
+    request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
+    try BGTaskScheduler.shared.submit(request)
+}
+
+// 长任务（带进度显示）
+let continuedRequest = BGContinuedProcessingTaskRequest(
+    identifier: "com.app.export",
+    title: "Exporting",
+    subtitle: "Starting..."
+)
+try BGTaskScheduler.shared.submit(continuedRequest)
+
+// Xcode 调试命令
+// e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.app.refresh"]
+```
+
+## CoreData → SwiftData 迁移
+```swift
+// 共存：两个框架操作同一个 SQLite 文件
+// CoreData 端：开启持久历史追踪
+if let desc = container.persistentStoreDescriptions.first {
+    desc.url = sharedStoreURL
+    desc.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+}
+
+// SwiftData 端：指向同一 URL
+let modelConfig = ModelConfiguration(url: sharedStoreURL)
+let modelContainer = try ModelContainer(for: Trip.self, configurations: modelConfig)
+
+// 检测 Widget 写入的变更
+func findWidgetTransactions(after token: DefaultHistoryToken?) -> [DefaultHistoryTransaction] {
+    var desc = HistoryDescriptor<DefaultHistoryTransaction>()
+    if let token { desc.token = token }
+    desc.predicate = #Predicate { $0.author == "widget" }
+    return (try? modelContext.fetchHistory(desc)) ?? []
+}
+```
+
+## CreateML（训练本地模型）
+```swift
+import CreateML
+
+// 图像分类器
+let trainingData = try MLImageClassifier.DataSource.labeledImages(fromDirectory: trainURL)
+let classifier = try MLImageClassifier(
+    trainingData: trainingData,
+    parameters: MLImageClassifier.ModelParameters(
+        augmentationOptions: .all,
+        algorithm: .transferLearning(.mobilenet)
+    )
+)
+try classifier.write(to: outputURL, metadata: MLModelMetadata(author: "MyApp", version: "1.0"))
+
+// 文本分类器
+let textClassifier = try MLTextClassifier(
+    trainingData: trainingData,
+    textColumn: "text",
+    labelColumn: "label",
+    parameters: .init(algorithm: .transferLearning(.bertEmbedding, revision: 1), language: .english)
+)
+// 导出后在 App 中用 NLModel 包装使用
+let nlModel = try NLModel(mlModel: textClassifier.model)
+print(nlModel.predictedLabel(for: "This is great!") ?? "unknown")
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
-3. **SwiftData**：Schema 生产环境只能新增字段；`@Attribute(.unique)` 防重复；Preview 用 `inMemory: true`
+3. **SwiftData**：Schema 生产只能新增字段；`@Attribute(.unique)` 防重复；Preview 用 `inMemory: true`；CoreData 共存时开启 `NSPersistentHistoryTrackingKey`
 4. **App Intents**：`AppShortcuts` 短语必须包含 `\(.applicationName)`；AssistantSchemas 需精确匹配 schema
-5. **HealthKit**：每次启动重新检查权限状态；后台交付需同时配置 Background Modes
-6. **CloudKit**：加密字段不支持 CKAsset 和查询；Schema 部署前在 Dashboard 确认
-7. **CoreBluetooth**：RSSI >= -50 过滤无效连接；数据分块传输加 "EOM" 标记
-8. **RealityKit**：SceneKit 已软废弃；使用 ECS 架构管理复杂场景；visionOS 移世界不移相机
-9. **CoreMotion**：用完立即 `stop()`；visionOS 需在 immersive space 内才能获取数据
-10. **StoreKit 2**：监听 `Transaction.updates` 处理服务端推送；`AppStore.sync()` 恢复购买
-11. **性能**：先 profile 再优化；标准 Stack 优先，100+ 元素再用 LazyStack
-12. **并发**：UI 更新必须在 `@MainActor`；共享状态用 `actor` 隔离
+5. **HealthKit**：每次启动重新检查权限；后台交付需配置 Background Modes；临床记录仅可读
+6. **CloudKit**：加密字段不支持 CKAsset 和谓词查询；Schema 部署后不可删改字段
+7. **CoreBluetooth**：RSSI >= -50 过滤弱信号；大数据分块传输并加 "EOM" 终止标记
+8. **RealityKit**：SceneKit 已软废弃；ECS 管理复杂场景；visionOS 移动世界而非相机
+9. **CoreMotion**：使用完毕立即 `stop*()`；visionOS 需在 immersive space 内才能获取数据
+10. **AVFoundation**：`CaptureSession` 操作用 `actor` 隔离到后台线程；`CIContext` 全局复用
+11. **Vision/CoreML**：Vision 坐标系原点在左下角，需用 `VNImageRectForNormalizedRect` 转换；模型编译后缓存到 Application Support
+12. **ARKit**：协同会话前让用户设备靠拢扫描同一空间；`environmentTexturing` 消耗较多 GPU
+13. **BackgroundTasks**：`BGContinuedProcessingTask` 需在 Xcode Capabilities 勾选；调试用 lldb `_simulateLaunch`
+14. **StoreKit 2**：监听 `Transaction.updates` 处理服务端推送；`AppStore.sync()` 恢复购买
+15. **EventKit**：iOS 17+ 优先用 `requestWriteOnlyAccessToEvents()` 降低权限打扰；监听 `EKEventStoreChanged`
+16. **性能**：先用 Xcode 26 Performance Instrument profile，再优化；标准 Stack 优先，100+ 再用 LazyStack
+17. **并发**：UI 更新必须在 `@MainActor`；共享可变状态用 `actor` 隔离；避免 `Task.detached` 逃逸主 actor
 
 ## 持续更新资源
 - SwiftUI：https://developer.apple.com/documentation/swiftui
@@ -947,7 +1317,15 @@ func titleNotEmpty(title: String) {
 - SwiftData：https://developer.apple.com/documentation/swiftdata
 - WidgetKit：https://developer.apple.com/documentation/widgetkit
 - RealityKit：https://developer.apple.com/documentation/realitykit
+- ARKit：https://developer.apple.com/documentation/arkit
+- Vision：https://developer.apple.com/documentation/vision
+- CoreML：https://developer.apple.com/documentation/coreml
+- CreateML：https://developer.apple.com/documentation/createml
+- AVFoundation：https://developer.apple.com/documentation/avfoundation
+- HealthKit：https://developer.apple.com/documentation/healthkit
+- CloudKit：https://developer.apple.com/documentation/cloudkit
 - StoreKit 2：https://developer.apple.com/documentation/storekit
+- BackgroundTasks：https://developer.apple.com/documentation/backgroundtasks
 - Swift Testing：https://developer.apple.com/documentation/testing
 - Xcode Cloud：https://developer.apple.com/documentation/xcode/xcode-cloud
 
