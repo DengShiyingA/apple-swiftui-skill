@@ -3408,6 +3408,226 @@ class MyAppUITests: XCTestCase {
 // Swift Testing + XCTest 可共存于同一 test target，逐步迁移
 ```
 
+
+## UIKit 现代集合视图（UICollectionView 最佳实践）
+```swift
+// 1. Compositional Layout（自适应多段布局）
+let layout = UICollectionViewCompositionalLayout { sectionIndex, environment in
+    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5),
+                                          heightDimension: .fractionalHeight(1.0))
+    let item = NSCollectionLayoutItem(layoutSize: itemSize)
+    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+                                           heightDimension: .absolute(200))
+    let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+    return NSCollectionLayoutSection(group: group)
+}
+
+// 2. 现代 Cell 注册（替代 register + dequeue）
+let cellRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, Item> { cell, indexPath, item in
+    var config = UIListContentConfiguration.subtitleCell()
+    config.text = item.title
+    config.secondaryText = item.subtitle
+    config.image = item.icon
+    cell.contentConfiguration = config
+    cell.accessories = [.disclosureIndicator()]
+}
+
+// 3. Diffable Data Source（声明式快照更新）
+let dataSource = UICollectionViewDiffableDataSource<Section, Item.ID>(collectionView: collectionView) {
+    collectionView, indexPath, itemID in
+    collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: items[itemID])
+}
+var snapshot = NSDiffableDataSourceSnapshot<Section, Item.ID>()
+snapshot.appendSections([.main])
+snapshot.appendItems(itemIDs)
+dataSource.apply(snapshot, animatingDifferences: true)
+```
+
+## Swift Package Manager（Package.swift）
+```swift
+// swift-tools-version: 5.9
+import PackageDescription
+
+let package = Package(
+    name: "MyLibrary",
+    platforms: [.iOS(.v17), .macOS(.v14)],
+    products: [
+        .library(name: "MyLibrary", targets: ["MyLibrary"])
+    ],
+    dependencies: [
+        .package(url: "https://github.com/example/dep.git", from: "1.0.0"),
+        .package(path: "../LocalPackage")
+    ],
+    targets: [
+        .target(name: "MyLibrary",
+                dependencies: ["dep"],
+                resources: [.process("Resources")]),
+        .testTarget(name: "MyLibraryTests", dependencies: ["MyLibrary"])
+    ]
+)
+
+// XCFramework 创建（多平台二进制分发）
+// xcodebuild archive -scheme MyLib -destination "generic/platform=iOS" -archivePath archives/iOS
+// xcodebuild -create-xcframework -archive archives/iOS.xcarchive -framework MyLib.framework -output MyLib.xcframework
+```
+
+## Xcode Cloud 构建脚本
+```bash
+#!/bin/sh
+# ci_post_clone.sh — clone 后执行（安装依赖）
+set -e
+brew install swiftlint
+# 或 CocoaPods: pod install
+
+# ci_pre_xcodebuild.sh — 构建前执行
+if [[ -n $CI_PULL_REQUEST_NUMBER ]]; then
+    echo "Building PR #$CI_PULL_REQUEST_NUMBER"
+fi
+
+# ci_post_xcodebuild.sh — 构建后执行（上传产物等）
+if [[ $CI_XCODEBUILD_ACTION == "build-for-testing" ]]; then
+    echo "Tests will run next"
+fi
+```
+
+## Push Notifications 进阶
+```swift
+import UserNotifications
+
+// 临时授权（静默送达，用户首次看到时选择保留/关闭）
+try await UNUserNotificationCenter.current()
+    .requestAuthorization(options: [.alert, .sound, .badge, .provisional])
+
+// 自定义操作按钮
+let replyAction = UNTextInputNotificationAction(identifier: "REPLY", title: "Reply",
+    textInputButtonTitle: "Send", textInputPlaceholder: "Type message...")
+let likeAction = UNNotificationAction(identifier: "LIKE", title: "Like")
+let category = UNNotificationCategory(identifier: "MESSAGE",
+    actions: [replyAction, likeAction], intentIdentifiers: [])
+UNUserNotificationCenter.current().setNotificationCategories([category])
+
+// 发送时指定 category
+let content = UNMutableNotificationContent()
+content.title = "New Message"
+content.categoryIdentifier = "MESSAGE"   // 关联操作按钮
+
+// 检查当前通知设置
+let settings = await UNUserNotificationCenter.current().notificationSettings()
+if settings.authorizationStatus == .authorized { /* 已授权 */ }
+```
+
+## App Intents 进阶（Assistant Schemas + SiriTipView）
+```swift
+import AppIntents
+
+// Assistant Schema（Apple Intelligence 深度集成）
+struct OpenPhotoIntent: AppIntent {
+    static var title: LocalizedStringResource = "Open Photo"
+    // @AssistantSchema(.photos.openAsset) // 匹配系统 schema
+
+    @Parameter(title: "Photo")
+    var photo: PhotoEntity
+
+    func perform() async throws -> some IntentResult { .result() }
+}
+
+// SiriTipView（教用户语音指令）
+SiriTipView(intent: OpenPhotoIntent())
+    .siriTipViewStyle(.automatic)
+
+// ShowsSnippetView（Siri 视觉结果卡片）
+func perform() async throws -> some IntentResult & ShowsSnippetView {
+    .result() {
+        MyCustomSnippetView(data: resultData)
+    }
+}
+
+// EnumerableEntityQuery（小型固定数据集）
+struct TrailEntityQuery: EnumerableEntityQuery {
+    func allEntities() async throws -> [TrailEntity] {
+        TrailDataManager.shared.allTrails.map { TrailEntity(trail: $0) }
+    }
+}
+```
+
+## StoreKit 进阶（促销 + 订阅管理）
+```swift
+import StoreKit
+
+// App Transaction 版本检查（业务模型迁移）
+let appTransaction = try await AppTransaction.shared
+if appTransaction.originalAppVersion < "2.0" {
+    grantLegacyEntitlements()  // 老用户保留原有权益
+}
+
+// 当前有效权益遍历
+for await result in Transaction.currentEntitlements {
+    if case .verified(let transaction) = result {
+        enableFeature(for: transaction.productID)
+    }
+}
+
+// 处理 App Store 发起的购买（促销页点击）
+for await intent in PurchaseIntent.intents {
+    let product = try await intent.product
+    let result = try await product.purchase()
+    // 处理购买结果
+}
+
+// 促销产品排序和可见性控制
+try await Product.PromotionInfo.updateProductOrder(productIDs)
+try await Product.PromotionInfo.updateProductVisibility(.hidden, for: productID)
+```
+
+## RealityKit 进阶（交互 + 环境）
+```swift
+import RealityKit
+
+// 可交互实体（点击/拖拽）
+entity.components[InputTargetComponent.self] = InputTargetComponent()
+entity.components[CollisionComponent.self] = CollisionComponent(shapes: [.generateBox(size: [0.3, 0.3, 0.3])])
+
+// 打开/关闭沉浸式空间
+@Environment(\.openImmersiveSpace) private var openImmersiveSpace
+@Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
+
+Button("Enter") { await openImmersiveSpace(id: "immersive") }
+Button("Exit") { await dismissImmersiveSpace() }
+
+// 物理原点偏移（大场景）
+entity.components[PhysicsSimulationComponent.self] = PhysicsSimulationComponent()
+// 使用 PhysicsOriginComponent 定义物理模拟原点
+
+// 后处理回调（Core Image 滤镜叠加 AR）
+arView.renderCallbacks.postProcess = { context in
+    let ciImage = CIImage(mtlTexture: context.sourceColorTexture)!
+    let filtered = ciImage.applyingFilter("CIGaussianBlur", parameters: ["inputRadius": 5])
+    let ciContext = CIContext(mtlDevice: context.device)
+    ciContext.render(filtered, to: context.compatibleTargetTexture,
+                     commandBuffer: context.commandBuffer, bounds: filtered.extent,
+                     colorSpace: CGColorSpaceCreateDeviceRGB())
+}
+```
+
+## Liquid Glass 进阶（glassEffectUnion + 形态变形）
+```swift
+// glassEffectUnion：合并动态创建的多个玻璃效果为统一形状
+ForEach(items) { item in
+    Image(item.icon)
+        .glassEffect()
+        .glassEffectUnion(id: "toolbar", in: namespace)  // 同 ID 的自动合并
+}
+
+// glassEffectTransition：视图切换时形态变形动画
+Image("pencil")
+    .glassEffect()
+    .glassEffectID("tool", in: namespace)
+    .glassEffectTransition(.materialize)  // 或 .matchedGeometry
+
+// 注意：glassEffectUnion 用于同时存在的多个效果合并
+// glassEffectID + glassEffectTransition 用于切换时的变形动画
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
