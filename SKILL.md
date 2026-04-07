@@ -1,18 +1,18 @@
 ---
 name: swiftui-development
 description: >
-  SwiftUI + Swift 6.2 + Xcode 26 + Apple Intelligence 生产级开发知识包（iOS 26+ / iPadOS 26+ / macOS Tahoe 26+ / visionOS 26+）—— 声明式 UI、Liquid Glass、Foundation Models on-device AI、App Intents、SwiftData、WidgetKit、HealthKit、CloudKit、RealityKit、Apple Pay、CoreBluetooth、NaturalLanguage、CoreMotion、AVFoundation、CoreML、Vision、ARKit、CoreImage、SafariServices、EventKit、Contacts、BackgroundTasks、CreateML、SpriteKit、Passkeys、DocumentGroup、Layout 协议、Accessibility、Localization 等 33+ 框架完整覆盖。
+  SwiftUI + Swift 6.2 + Xcode 26 + Apple Intelligence 生产级开发知识包（iOS 26+ / iPadOS 26+ / macOS Tahoe 26+ / visionOS 26+）—— 声明式 UI、Liquid Glass、Foundation Models on-device AI、App Intents、SwiftData、WidgetKit、HealthKit、CloudKit、RealityKit、Apple Pay、CoreBluetooth、NaturalLanguage、CoreMotion、AVFoundation、CoreML、Vision、ARKit、CoreImage、SafariServices、EventKit、Contacts、BackgroundTasks、CreateML、SpriteKit、Passkeys、DocumentGroup、Layout 协议、Accessibility、Localization、Combine、Network Framework、CoreLocation 高级、CoreData、Authentication Services 等 40+ 框架完整覆盖。
 
-  包含 500+ 代码示例、WWDC25/26 最佳实践、常见坑点。专为 Claude Code、Cursor、Xcode Coding Intelligence 等 AI 工具设计。
+  包含 800+ 代码示例、WWDC25/26 最佳实践、常见坑点。专为 Claude Code、Cursor、Xcode Coding Intelligence 等 AI 工具设计。
 
-  Trigger keywords (EN): SwiftUI, Swift 6.2, Xcode 26, Apple Intelligence, Foundation Models, LanguageModelSession, @Generable, Guided Generation, Liquid Glass, glassEffect, GlassEffectContainer, glassEffectID, NavigationStack, zoom transition, @Observable, @Model, SwiftData, Observations AsyncSequence, WebView, Rich TextEditor, WidgetKit, Live Activities, App Intents, AppEntity, EntityQuery, AppShortcuts, HealthKit, CloudKit, RealityKit, RealityView, CoreBluetooth, NaturalLanguage, CoreMotion, Apple Pay, PassKit, Sign in with Apple, Passkeys, StoreKit 2, Xcode Cloud, DocC, Swift Testing, SF Symbols, visionOS, spatial layout, AVFoundation, AVPlayer, AVCaptureSession, CoreML, Vision, VNRecognizeTextRequest, ARKit, CoreImage, CIFilter, SafariServices, ASWebAuthenticationSession, EventKit, Contacts, ContactAccessButton, NWPathMonitor, BackgroundTasks, BGTaskScheduler, CoreData migration, CreateML, SpriteKit, SpriteView, DocumentGroup, FileDocument, Layout protocol, @AppStorage, @SceneStorage, Keychain, Codable, Accessibility, VoiceOver, Localization, Commands, openWindow
+  Trigger keywords (EN): SwiftUI, Swift 6.2, Xcode 26, Apple Intelligence, Foundation Models, LanguageModelSession, @Generable, Guided Generation, Liquid Glass, glassEffect, GlassEffectContainer, glassEffectID, NavigationStack, zoom transition, @Observable, @Model, SwiftData, Observations AsyncSequence, WebView, Rich TextEditor, WidgetKit, Live Activities, App Intents, AppEntity, EntityQuery, AppShortcuts, HealthKit, CloudKit, RealityKit, RealityView, CoreBluetooth, NaturalLanguage, CoreMotion, Apple Pay, PassKit, Sign in with Apple, Passkeys, StoreKit 2, Xcode Cloud, DocC, Swift Testing, SF Symbols, visionOS, spatial layout, AVFoundation, AVPlayer, AVCaptureSession, CoreML, Vision, VNRecognizeTextRequest, ARKit, CoreImage, CIFilter, SafariServices, ASWebAuthenticationSession, EventKit, Contacts, ContactAccessButton, NWPathMonitor, NWConnection, BackgroundTasks, BGTaskScheduler, CoreData migration, CreateML, SpriteKit, SpriteView, DocumentGroup, FileDocument, Layout protocol, @AppStorage, @SceneStorage, Keychain, Codable, Accessibility, VoiceOver, Localization, Commands, openWindow, Combine, Publisher, Subscriber, FocusFilter, CLMonitor, CLBeaconRegion, iBeacon, geofencing, MKOverlay, MKClusterAnnotation, UNNotificationAction, INSendMessageIntent, ParticleEmitterComponent, CustomMaterial, VNDetectTrajectoriesRequest, VNGeneratePersonInstanceMaskRequest, ARObjectScanningConfiguration, sceneReconstruction, HKWorkoutRouteBuilder, NSPersistentHistoryTracking, Security Key, Credential Provider
 
-  触发关键词（中文）: SwiftUI, Swift 6.2, Xcode 26, 苹果智能, Foundation Models, Liquid Glass, SwiftData, WidgetKit, App Intents, HealthKit, CloudKit, RealityKit, 蓝牙, 自然语言, Apple Pay, Passkeys 无密码登录, StoreKit 内购, 音视频, 相机拍摄, 文字识别 OCR, 人脸检测, AR 增强现实, 图像滤镜, OAuth 登录, 日历提醒, 通讯录, 网络监控, 后台任务, 数据迁移, 机器学习, 2D 游戏, 文档型 App, 多窗口, 菜单命令, 无障碍, 本地化, iOS 26 开发, 多平台适配
+  触发关键词（中文）: SwiftUI, Swift 6.2, Xcode 26, 苹果智能, Foundation Models, Liquid Glass, SwiftData, WidgetKit, App Intents, HealthKit, CloudKit, RealityKit, 蓝牙, 自然语言, Apple Pay, Passkeys 无密码登录, StoreKit 内购, 音视频, 相机拍摄, 文字识别 OCR, 人脸检测, AR 增强现实, 图像滤镜, OAuth 登录, 日历提醒, 通讯录, 网络监控, 后台任务, 数据迁移, 机器学习, 2D 游戏, 文档型 App, 多窗口, 菜单命令, 无障碍, 本地化, iOS 26 开发, 多平台适配, Combine 响应式, NWConnection 网络连接, iBeacon 信标, 地理围栏, 地图叠加层, 通知操作按钮, 通信通知, 粒子系统, 自定义着色器, 轨迹检测, 实例分割, 3D 对象扫描, 场景重建, 运动路线, 历史追踪, ObjC 互操作, 安全密钥
 ---
 
 # SwiftUI Development - Production Knowledge Base（2026 年 4 月完整版）
 
-专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。覆盖 SwiftUI、Apple Intelligence、Liquid Glass、SwiftData、WidgetKit、App Intents、HealthKit、CloudKit、RealityKit、Apple Pay、AVFoundation、CoreML、Vision、ARKit、CoreImage、EventKit、Contacts、Passkeys、BackgroundTasks、SpriteKit、CreateML、DocumentGroup、Layout 协议、Accessibility、Localization 等 **33+ 框架**，58 个章节，500+ 代码示例。
+专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。覆盖 SwiftUI、Apple Intelligence、Liquid Glass、SwiftData、WidgetKit、App Intents、HealthKit、CloudKit、RealityKit、Apple Pay、AVFoundation、CoreML、Vision、ARKit、CoreImage、EventKit、Contacts、Passkeys、BackgroundTasks、SpriteKit、CreateML、DocumentGroup、Layout 协议、Accessibility、Localization、Combine、Network Framework、CoreLocation 高级、CoreData、Authentication Services 等 **40+ 框架**，74 个章节，800+ 代码示例。
 
 ## 平台快照
 | 项目 | 值 |
@@ -4416,6 +4416,921 @@ ScrollView { content }
 // 蓝色节点 = 你的代码，灰色节点 = 系统框架
 ```
 
+## Combine（响应式编程）
+```swift
+import Combine
+
+// NotificationCenter → Publisher
+var cancellable: AnyCancellable?
+cancellable = NotificationCenter.default
+    .publisher(for: UIDevice.orientationDidChangeNotification)
+    .filter { _ in UIDevice.current.orientation == .portrait }
+    .sink { _ in print("切换到竖屏") }
+
+// KVO → Combine
+class UserInfo: NSObject {
+    @objc dynamic var lastLogin: Date = Date(timeIntervalSince1970: 0)
+}
+cancellable = UserInfo().publisher(for: \.lastLogin)
+    .sink { date in print("上次登录: \(date)") }
+
+// Timer Publisher
+cancellable = Timer.publish(every: 1, on: .main, in: .default)
+    .autoconnect()
+    .receive(on: myDispatchQueue)
+    .assign(to: \.lastUpdated, on: myDataModel)
+
+// 搜索框防抖
+cancellable = NotificationCenter.default
+    .publisher(for: UITextField.textDidChangeNotification, object: searchField)
+    .map { ($0.object as! UITextField).text ?? "" }
+    .filter { $0.unicodeScalars.allSatisfy { CharacterSet.alphanumerics.contains($0) } }
+    .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
+    .receive(on: RunLoop.main)
+    .assign(to: \.filterString, on: viewModel)
+
+// Future（替代 completion handler）
+func fetchData() -> Future<Int, Never> {
+    Future { promise in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            promise(.success(Int.random(in: 1...10)))
+        }
+    }
+}
+
+// Subject（内部触发，外部订阅）
+private let _didTap = PassthroughSubject<Void, Never>()
+var didTap: AnyPublisher<Void, Never> { _didTap.eraseToAnyPublisher() }
+_didTap.send()  // 触发
+cancellable = viewController.didTap.sink { print("用户点击了") }
+
+// 自定义 Subscriber（背压控制）
+class MySubscriber: Subscriber {
+    typealias Input = Date; typealias Failure = Never
+    func receive(subscription: Subscription) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { subscription.request(.max(3)) }
+    }
+    func receive(_ input: Date) -> Subscribers.Demand { print("收到: \(input)"); return .none }
+    func receive(completion: Subscribers.Completion<Never>) {}
+}
+```
+
+## Objective-C / C 互操作
+```swift
+// ObjC completion handler → Swift async 自动桥接
+// ObjC: - (void)presentWithCompletion:(void (^)(BOOL success))completion;
+func present() async -> Bool   // 自动生成 async 版本
+
+// ObjC 带 NSError → Swift async throws
+// ObjC: - (void)writeData:(NSData *)data timeout:(NSTimeInterval)timeout completionHandler:(void (^)(NSError *_Nullable))completionHandler;
+func write(_ data: Data, timeout: TimeInterval) async throws
+
+// 多返回值 → tuple
+func sign(_ signData: Data, using pass: PKSecureElementPass) async throws -> (Data, Data)
+```
+
+**Importing Swift into ObjC**：
+```objc
+#import "ProductModuleName-Swift.h"        // App target
+#import <ProductName/ProductModuleName-Swift.h>  // Framework target
+@class MySwiftClass;                        // 前向声明避免循环引用
+```
+
+**KVO in Swift**：
+```swift
+class MyObjectToObserve: NSObject {
+    @objc dynamic var myDate = NSDate(timeIntervalSince1970: 0)
+}
+
+class MyObserver: NSObject {
+    @objc var objectToObserve: MyObjectToObserve
+    var observation: NSKeyValueObservation?
+    init(object: MyObjectToObserve) {
+        objectToObserve = object; super.init()
+        observation = observe(\.objectToObserve.myDate, options: [.old, .new]) { _, change in
+            print("changed from: \(change.oldValue!), to: \(change.newValue!)")
+        }
+    }
+}
+```
+
+**C 函数互操作**：
+```swift
+// C 指针参数传递
+func takesAPointer(_ p: UnsafePointer<Float>) { }
+var x: Float = 0.0
+takesAPointer(&x)          // 传变量地址
+takesAPointer([1.0, 2.0])  // 传数组
+
+// UnsafeMutablePointer / UnsafeRawPointer 同理
+func takesARawPointer(_ p: UnsafeRawPointer?) { }
+var y: Int = 0
+takesARawPointer(&x); takesARawPointer(&y); takesARawPointer("Hello")
+```
+
+## Network Framework 进阶（NWConnection）
+```swift
+import Network
+
+// TCP + TLS 连接
+let tlsOptions = NWProtocolTLS.Options()
+sec_protocol_options_set_min_tls_protocol_version(tlsOptions.securityProtocolOptions, .TLSv12)
+let params = NWParameters(tls: tlsOptions, tcp: .init())
+let connection = NWConnection(to: .hostPort(host: "example.com", port: 4433), using: params)
+
+connection.stateUpdateHandler = { state in
+    switch state {
+    case .ready: print("Connected")
+    case .failed(let error): print("Failed: \(error)")
+    default: break
+    }
+}
+connection.start(queue: .global())
+
+// UDP 连接（无 TLS）
+let udpConnection = NWConnection(to: .hostPort(host: "example.com", port: 9000),
+    using: NWParameters(dtls: nil, udp: .init()))
+
+// 带用户归因（iOS 14.2+，VPN / 代理可区分来源）
+let userParams = NWParameters()
+userParams.attribution = .user
+
+// NWListener（服务端监听）
+let listener = try NWListener(using: params, on: 4433)
+listener.newConnectionHandler = { newConnection in
+    newConnection.start(queue: .global())
+}
+listener.start(queue: .global())
+```
+
+## CoreLocation 进阶
+
+### 地理围栏（CLMonitor，iOS 17+ 异步 API）
+```swift
+Task {
+    let monitor = await CLMonitor("my_monitor")
+    let condition = CLCircularGeographicCondition(center: targetCoord, radius: 200)
+    monitor.add(condition, identifier: "store_nearby")
+    for try await event in monitor.events {
+        if event.state == .satisfied { showNearbyNotification() }
+    }
+}
+```
+
+### iBeacon 测距
+```swift
+func monitorBeacons() {
+    guard CLLocationManager.isMonitoringAvailable(for: CLBeaconRegion.self) else { return }
+    let uuid = UUID(uuidString: "39ED98FF-2900-441A-802F-9C398FC199D2")!
+    let constraint = CLBeaconIdentityConstraint(uuid: uuid)
+    let region = CLBeaconRegion(beaconIdentityConstraint: constraint, identifier: uuid.uuidString)
+    locationManager.startMonitoring(for: region)
+}
+
+func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+    if region is CLBeaconRegion { manager.startRangingBeacons(in: region as! CLBeaconRegion) }
+}
+
+func locationManager(_ manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
+    guard let nearest = beacons.first else { return }
+    switch nearest.proximity {
+    case .near, .immediate: displayExhibitInfo(major: nearest.major, minor: nearest.minor)
+    default: dismissExhibit()
+    }
+}
+```
+
+### 反向地理编码
+```swift
+func lookUpCurrentLocation() async -> CLPlacemark? {
+    guard let location = locationManager.location else { return nil }
+    return try? await CLGeocoder().reverseGeocodeLocation(location).first
+}
+
+// 正向地理编码（地址 → 坐标）
+let placemarks = try await CLGeocoder().geocodeAddressString("Apple Park, Cupertino")
+let coordinate = placemarks.first?.location?.coordinate
+```
+
+### 后台位置更新
+```swift
+@MainActor class LocationsHandler: ObservableObject {
+    static let shared = LocationsHandler()
+    private let manager = CLLocationManager()
+    private var background: CLBackgroundActivitySession?
+    @Published var lastLocation = CLLocation()
+
+    func startLocationUpdates() {
+        if manager.authorizationStatus == .notDetermined { manager.requestWhenInUseAuthorization() }
+        Task {
+            for try await update in CLLocationUpdate.liveUpdates() {
+                if let loc = update.location { lastLocation = loc }
+            }
+        }
+    }
+
+    func enableBackground() { background = CLBackgroundActivitySession() }
+    func disableBackground() { background?.invalidate() }
+}
+```
+
+## UserNotifications 进阶
+
+### 可操作通知（自定义按钮）
+```swift
+let replyAction = UNTextInputNotificationAction(identifier: "REPLY", title: "Reply",
+    textInputButtonTitle: "Send", textInputPlaceholder: "Type message...")
+let likeAction = UNNotificationAction(identifier: "LIKE", title: "Like")
+let category = UNNotificationCategory(identifier: "MESSAGE",
+    actions: [replyAction, likeAction], intentIdentifiers: [],
+    hiddenPreviewsBodyPlaceholder: "", options: .customDismissAction)
+UNUserNotificationCenter.current().setNotificationCategories([category])
+
+// 处理操作响应
+func userNotificationCenter(_ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void) {
+    let userInfo = response.notification.request.content.userInfo
+    switch response.actionIdentifier {
+    case "REPLY":
+        if let textResponse = response as? UNTextInputNotificationResponse {
+            sendReply(text: textResponse.userText)
+        }
+    case "LIKE": likeMessage(id: userInfo["msgID"] as? String)
+    default: break
+    }
+    completionHandler()
+}
+```
+
+### 通信通知（INSendMessageIntent，支持头像 + Focus）
+```swift
+import Intents
+
+let handle = INPersonHandle(value: "user-id-1", type: .unknown)
+let sender = INPerson(personHandle: handle, nameComponents: nil,
+    displayName: "Alice", image: INImage(named: "alice.png"),
+    contactIdentifier: nil, customIdentifier: nil)
+let intent = INSendMessageIntent(recipients: nil, outgoingMessageType: .outgoingMessageText,
+    content: "Message content", speakableGroupName: nil,
+    conversationIdentifier: "conv-1", serviceName: nil, sender: sender, attachments: nil)
+
+// Notification Service Extension 中更新
+let interaction = INInteraction(intent: intent, response: nil)
+interaction.direction = .incoming
+try await interaction.donate()
+let updatedContent = try request.content.updating(from: intent)
+contentHandler(updatedContent)
+```
+
+### Critical Alerts（紧急警报，突破静音/勿扰）
+```json
+{
+   "aps": {
+      "alert": { "title": "Emergency", "body": "Severe weather warning" },
+      "sound": { "critical": 1, "name": "alert.aiff", "volume": 1.0 }
+   }
+}
+```
+
+### APNs 设备注册
+```swift
+// AppDelegate
+func application(_ app: UIApplication, didFinishLaunchingWithOptions opts: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    UIApplication.shared.registerForRemoteNotifications()
+    return true
+}
+func application(_ app: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken token: Data) {
+    sendTokenToServer(token)
+}
+
+// 静默推送（后台唤醒 App 刷新数据）
+// APNs payload: { "aps": { "content-available": 1 } }
+```
+
+## MapKit 进阶
+
+### 地图叠加层（Overlays）
+```swift
+// 多边形
+let coords = [CLLocationCoordinate2D(latitude: 37.81, longitude: -122.52),
+    CLLocationCoordinate2D(latitude: 37.81, longitude: -122.35),
+    CLLocationCoordinate2D(latitude: 37.70, longitude: -122.35),
+    CLLocationCoordinate2D(latitude: 37.70, longitude: -122.52)]
+let polygon = MKPolygon(coordinates: coords, count: coords.count)
+mapView.addOverlay(polygon)
+
+// 圆形 + 折线
+let circle = MKCircle(center: sfCenter, radius: 9000)
+mapView.addOverlay(circle, level: .aboveLabels)
+
+// 渲染器代理
+func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+    switch overlay {
+    case let o as MKCircle:
+        let r = MKCircleRenderer(circle: o); r.lineWidth = 2
+        r.strokeColor = .systemBlue; r.fillColor = .systemTeal; r.alpha = 0.5; return r
+    case let o as MKPolyline:
+        let r = MKPolylineRenderer(polyline: o); r.lineWidth = 2; r.strokeColor = .systemRed; return r
+    case let o as MKPolygon:
+        let r = MKPolygonRenderer(polygon: o)
+        r.fillColor = .systemGreen.withAlphaComponent(0.3); r.strokeColor = .systemGreen; return r
+    default: return MKOverlayRenderer(overlay: overlay)
+    }
+}
+```
+
+### 标注聚合（Clustering）
+```swift
+// 设置 clusteringIdentifier 自动聚合
+override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
+    super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
+    clusteringIdentifier = "myCluster"
+    displayPriority = .defaultHigh
+}
+
+// 自定义聚合外观
+override func prepareForDisplay() {
+    super.prepareForDisplay()
+    if let cluster = annotation as? MKClusterAnnotation {
+        let count = cluster.memberAnnotations.count
+        image = drawClusterImage(count: count)
+    }
+}
+```
+
+### GeoJSON 解码
+```swift
+if let url = Bundle.main.url(forResource: "event", withExtension: "json") {
+    let data = try Data(contentsOf: url)
+    let objects = try MKGeoJSONDecoder().decode(data)
+    for object in objects {
+        if let feature = object as? MKGeoJSONFeature {
+            for geo in feature.geometry {
+                if let poly = geo as? MKMultiPolygon { mapView.addOverlay(poly) }
+                if let point = geo as? MKPointAnnotation { mapView.addAnnotation(point) }
+            }
+        }
+    }
+}
+```
+
+### 本地搜索 + 自动补全
+```swift
+let completer = MKLocalSearchCompleter()
+completer.resultTypes = .pointOfInterest
+completer.queryFragment = "coffee"
+
+// 执行搜索
+let request = MKLocalSearch.Request(completion: selectedCompletion)
+let search = MKLocalSearch(request: request)
+let response = try await search.start()
+let mapItems = response.mapItems
+
+// MKMapItem 持久化（通过 identifier）
+guard let id = mapItem.identifier else { return }
+let savedID = id.rawValue
+// 恢复
+let restored = try await MKMapItemRequest(mapItemIdentifier: MKMapItem.Identifier(rawValue: savedID)).mapItem
+```
+
+## StoreKit 进阶（退款 / Family Sharing / Win-Back）
+```swift
+@MainActor @Observable
+final class Store {
+    var consumableCount: Int = 0
+    var activeSubscription: String? = nil
+
+    init() {
+        // 启动时处理未完成交易 + 当前权益
+        Task(priority: .background) {
+            for await result in Transaction.unfinished { await handle(result) }
+            for await result in Transaction.currentEntitlements { await handle(result) }
+        }
+        Task(priority: .background) {
+            for await result in Transaction.updates { await handle(result) }
+        }
+    }
+
+    private func handle(_ verificationResult: VerificationResult<Transaction>) async {
+        guard case .verified(let transaction) = verificationResult else { return }
+        if let _ = transaction.revocationDate {
+            // 退款/撤销：回收权益
+            activeSubscription = nil
+        } else if let exp = transaction.expirationDate, exp < Date() {
+            activeSubscription = nil  // 过期
+        } else {
+            activeSubscription = transaction.productID  // 激活
+        }
+        await transaction.finish()
+    }
+}
+
+// Win-Back Offers 拦截
+.task {
+    for await message in StoreKit.Message.messages {
+        if message.reason != .winBackOffer { try? displayStoreMessage(message) }
+    }
+}
+```
+
+## HealthKit 进阶（运动路线 / 多运动 / 统计集合）
+
+### Workout Route（HKWorkoutRouteBuilder）
+```swift
+// 位置更新时添加路线数据
+func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    let filtered = locations.filter { $0.horizontalAccuracy <= 50.0 }
+    guard !filtered.isEmpty else { return }
+    routeBuilder.insertRouteData(filtered) { success, error in }
+}
+
+// 完成路线
+routeBuilder.finishRoute(with: myWorkout, metadata: nil) { newRoute, error in }
+
+// 读取路线位置点（分批返回）
+let query = HKWorkoutRouteQuery(route: myRoute) { _, locations, done, error in
+    guard let locations else { return }
+    // 处理这批位置数据；done == true 时全部返回
+}
+healthStore.execute(query)
+```
+
+### 多运动 Workout（铁人三项等）
+```swift
+let config = HKWorkoutConfiguration()
+config.activityType = .swimBikeRun; config.locationType = .outdoor
+let session = try HKWorkoutSession(healthStore: store, configuration: config)
+session.startActivity(with: .now)
+
+// 切换到游泳
+let swimConfig = HKWorkoutConfiguration()
+swimConfig.activityType = .swimming; swimConfig.swimmingLocationType = .openWater
+session.beginNewActivity(configuration: swimConfig, date: .now, metadata: nil)
+
+// 过渡阶段
+session.endCurrentActivity(on: .now)
+let transConfig = HKWorkoutConfiguration(); transConfig.activityType = .transition
+session.beginNewActivity(configuration: transConfig, date: .now, metadata: nil)
+```
+
+### Statistics Collection（周期统计）
+```swift
+let interval = DateComponents(day: 7)
+let anchorDate = Calendar.current.nextDate(after: Date(), matching:
+    DateComponents(hour: 3, minute: 0, weekday: 2), matchingPolicy: .nextTime, direction: .backward)!
+let query = HKStatisticsCollectionQuery(quantityType: HKQuantityType(.stepCount),
+    quantitySamplePredicate: nil, options: .cumulativeSum, anchorDate: anchorDate, intervalComponents: interval)
+query.initialResultsHandler = { _, results, _ in
+    let startDate = Calendar.current.date(byAdding: .month, value: -3, to: Date())!
+    results?.enumerateStatistics(from: startDate, to: Date()) { stats, _ in
+        let steps = stats.sumQuantity()?.doubleValue(for: .count()) ?? 0
+    }
+}
+healthStore.execute(query)
+```
+
+## CoreData 进阶
+
+### Persistent History Tracking
+```swift
+// 启用历史追踪 + 远程变更通知
+let desc = container.persistentStoreDescriptions.first
+desc?.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+desc?.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+
+// 设置 transactionAuthor
+viewContext.transactionAuthor = "addItem"
+try viewContext.save()
+viewContext.transactionAuthor = nil  // 保存后重置
+
+// 获取历史变更
+let request = NSPersistentHistoryChangeRequest.fetchHistory(after: lastToken)
+let result = try bgContext.execute(request) as? NSPersistentHistoryResult
+let transactions = result?.result as? [NSPersistentHistoryTransaction] ?? []
+
+// 合并变更到 viewContext
+for txn in transactions {
+    viewContext.mergeChanges(fromContextDidSave: txn.objectIDNotification())
+    lastToken = txn.token
+}
+
+// 清理 7 天前历史
+let purge = NSPersistentHistoryChangeRequest.deleteHistory(
+    before: Calendar.current.date(byAdding: .day, value: -7, to: Date())!)
+try bgContext.execute(purge)
+```
+
+### Lightweight Migration + Batch Fetch
+```swift
+// 自动轻量级迁移
+let options = [NSMigratePersistentStoresAutomaticallyOption: true,
+               NSInferMappingModelAutomaticallyOption: true]
+try coordinator.addPersistentStore(type: .sqlite, at: storeURL, options: options)
+
+// 批量 fetch
+let request = NSFetchRequest<ShoppingItem>(entityName: "ShoppingItem")
+request.fetchBatchSize = 10  // 每次从 SQLite 加载 10 条
+
+// Query Generation（WAL pinning，隔离并发写入）
+try viewContext.setQueryGenerationFrom(.current)
+```
+
+## SwiftData 进阶
+
+### History Tracking（变更追踪）
+```swift
+// 获取 widget 写入的变更
+var desc = History.HistoryDescriptor<History.DefaultTransaction>()
+desc.predicate = #Predicate { ($0.token > savedToken) && ($0.author == "widget") }
+let txns = try context.fetchHistory(desc)
+
+// 过滤特定属性变更
+for txn in txns {
+    for change in txn.changes where change is History.DefaultUpdateChange<Trip> {
+        if change.updatedAttributes.contains(\.flightTime) {
+            let trip = try context.fetch(FetchDescriptor<Trip>(
+                predicate: #Predicate { $0.persistentModelID == change.changedModelID })).first
+        }
+    }
+}
+
+// preserveValueOnDeletion + Tombstone
+@Model final class Trip {
+    @Attribute(.preserveValueOnDeletion) var bookingRef: String
+}
+// 从删除变更中读取保留值
+if let deletion = change as? History.DefaultDeleteChange<Trip> {
+    let ref = deletion.tombstone[\.bookingRef]
+}
+```
+
+### Index / Unique 配置
+```swift
+@Model class Trip {
+    #Index<Trip>([\.name], [\.startDate], [\.name, \.startDate, \.endDate])
+    #Unique<Trip>([\.name, \.startDate, \.endDate])
+    @Attribute(.preserveValueOnDeletion) var name: String
+    var destination: String
+}
+```
+
+### 动态 Query 重建
+```swift
+init(searchText: String, sortParam: SortParameter, sortOrder: SortOrder) {
+    let predicate = #Predicate<Quake> { quake in
+        searchText.isEmpty || quake.location.name.contains(searchText)
+    }
+    switch sortParam {
+    case .time: _quakes = Query(filter: predicate, sort: \.time, order: sortOrder)
+    case .magnitude: _quakes = Query(filter: predicate, sort: \.magnitude, order: sortOrder)
+    }
+}
+```
+
+## Vision 进阶（轨迹检测 / 图像分类 / 3D 姿态 / 实例分割 / 目标追踪）
+
+### 轨迹检测（实时视频帧）
+```swift
+let request = VNDetectTrajectoriesRequest(frameAnalysisSpacing: .zero, trajectoryLength: 15) { req, _ in
+    guard let results = req.results as? [VNTrajectoryObservation] else { return }
+    for trajectory in results where trajectory.confidence > 0.9 {
+        print("轨迹半径: \(trajectory.movingAverageRadius)")
+    }
+}
+request.objectMinimumNormalizedRadius = 10.0 / 1920.0
+request.objectMaximumNormalizedRadius = 30.0 / 1920.0
+
+// AVCaptureVideoDataOutputSampleBufferDelegate 中调用
+func captureOutput(_ output: AVCaptureOutput, didOutput buffer: CMSampleBuffer, from conn: AVCaptureConnection) {
+    try? VNImageRequestHandler(cmSampleBuffer: buffer).perform([request])
+}
+```
+
+### 图像分类（Swift 6 异步 API）
+```swift
+func classifyImage(url: URL) async throws -> [String: Float] {
+    let request = ClassifyImageRequest()
+    let results = try await request.perform(on: url)
+        .filter { $0.hasMinimumPrecision(0.1, forRecall: 0.8) }
+    return Dictionary(uniqueKeysWithValues: results.map { ($0.identifier, $0.confidence) })
+}
+```
+
+### 3D 人体姿态检测
+```swift
+let request = VNDetectHumanBodyPose3DRequest()
+try VNImageRequestHandler(url: imageURL).perform([request])
+if let obs = request.results?.first {
+    let leftShoulder = try obs.recognizedPoint(.leftShoulder)
+    let leftArm = try obs.recognizedPoints(.leftArm)  // 关节组
+}
+```
+
+### 个体实例分割（每人独立掩码）
+```swift
+let request = VNGeneratePersonInstanceMaskRequest()
+try VNImageRequestHandler(ciImage: image).perform([request])
+if let mask = request.results?.first as? VNInstanceMaskObservation {
+    for index in mask.allInstances {
+        let buffer = try mask.generateScaledMaskForImage(forInstances: [index], from: handler)
+        let maskImage = CIImage(cvPixelBuffer: buffer)
+    }
+}
+```
+
+### 多目标追踪
+```swift
+var inputObservations = [UUID: VNDetectedObjectObservation]()
+for rect in objectsToTrack {
+    let obs = VNDetectedObjectObservation(boundingBox: rect.boundingBox)
+    inputObservations[obs.uuid] = obs
+}
+// 逐帧追踪
+for (_, obs) in inputObservations {
+    let request = VNTrackObjectRequest(detectedObjectObservation: obs)
+    request.trackingLevel = .accurate
+    try sequenceHandler.perform([request], on: frame, orientation: orientation)
+    if let result = request.results?.first as? VNDetectedObjectObservation {
+        inputObservations[result.uuid] = result
+    }
+}
+```
+
+## ARKit 进阶（LiDAR 深度 / 3D 对象扫描 / 场景重建 / 持久化世界地图）
+
+### LiDAR 场景深度
+```swift
+guard ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) else { return }
+let config = ARWorldTrackingConfiguration()
+config.frameSemantics = [.sceneDepth, .smoothedSceneDepth]
+arSession.run(config)
+
+func session(_ session: ARSession, didUpdate frame: ARFrame) {
+    guard let depth = frame.smoothedSceneDepth ?? frame.sceneDepth else { return }
+    let depthMap: CVPixelBuffer = depth.depthMap           // 每像素距离（米）
+    let confidenceMap: CVPixelBuffer? = depth.confidenceMap
+}
+```
+
+### 3D 对象扫描与检测
+```swift
+// 扫描阶段
+let scanConfig = ARObjectScanningConfiguration()
+scanConfig.planeDetection = .horizontal
+sceneView.session.run(scanConfig, options: .resetTracking)
+
+// 提取参考对象
+sceneView.session.createReferenceObject(transform: box.simdWorldTransform,
+    center: SIMD3<Float>(), extent: box.extent) { object, error in
+    if let ref = object { ref.name = "myObject" }
+}
+
+// 检测阶段
+let detectConfig = ARWorldTrackingConfiguration()
+detectConfig.detectionObjects = ARReferenceObject.referenceObjects(inGroupNamed: "gallery", bundle: nil)!
+sceneView.session.run(detectConfig)
+```
+
+### 场景重建 + 语义分类
+```swift
+let config = ARWorldTrackingConfiguration()
+config.sceneReconstruction = .meshWithClassification
+config.planeDetection = [.horizontal, .vertical]
+arView.session.run(config)
+
+arView.environment.sceneUnderstanding.options.insert(.occlusion)  // 真实物体遮挡虚拟内容
+arView.environment.sceneUnderstanding.options.insert(.physics)    // 虚拟物体与真实网格碰撞
+```
+
+### 持久化世界地图
+```swift
+// 保存
+sceneView.session.getCurrentWorldMap { map, _ in
+    guard let map else { return }
+    let data = try! NSKeyedArchiver.archivedData(withRootObject: map, requiringSecureCoding: true)
+    try! data.write(to: mapSaveURL, options: .atomic)
+}
+
+// 加载恢复
+let data = try Data(contentsOf: mapSaveURL)
+let worldMap = try NSKeyedUnarchiver.unarchivedObject(ofClass: ARWorldMap.self, from: data)!
+let config = ARWorldTrackingConfiguration()
+config.initialWorldMap = worldMap
+sceneView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
+```
+
+### 多用户共享 AR（MultipeerConnectivity）
+```swift
+// 发送世界地图
+sceneView.session.getCurrentWorldMap { map, _ in
+    guard let map, let data = try? NSKeyedArchiver.archivedData(withRootObject: map, requiringSecureCoding: true)
+    else { return }
+    multipeerSession.sendToAllPeers(data)
+}
+
+// 接收并应用
+if let worldMap = try? NSKeyedUnarchiver.unarchivedObject(ofClass: ARWorldMap.self, from: data) {
+    let config = ARWorldTrackingConfiguration()
+    config.initialWorldMap = worldMap
+    sceneView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
+}
+```
+
+## RealityKit 进阶（粒子系统 / 自定义着色器 / 动画 / IBL 光照）
+
+### 粒子发射器
+```swift
+var emitter = ParticleEmitterComponent.Presets.fireworks  // 或 ParticleEmitterComponent()
+emitter.speed = 0.2
+emitter.mainEmitter.birthRate = 150
+
+// 颜色渐变（生命周期内变化）
+typealias PC = ParticleEmitterComponent.ParticleEmitter.ParticleColor
+let c1 = ParticleEmitterComponent.ParticleEmitter.Color(.red)
+let c2 = ParticleEmitterComponent.ParticleEmitter.Color(.blue)
+emitter.mainEmitter.color = PC.evolving(start: .single(c1), end: .single(c2))
+
+// 自定义粒子图像
+if let tex = try? TextureResource.generate(from: cgImage, options: .init(semantic: .raw)) {
+    emitter.mainEmitter.image = tex
+}
+entity.components.set(emitter)
+```
+
+### 自定义 Metal 着色器（CustomMaterial）
+```swift
+let library = MTLCreateSystemDefaultDevice()!.makeDefaultLibrary()!
+let surfaceShader = CustomMaterial.SurfaceShader(named: "mySurfaceShader", in: library)
+let geoModifier = CustomMaterial.GeometryModifier(named: "waveModifier", in: library)
+let material = try CustomMaterial(surfaceShader: surfaceShader, geometryModifier: geoModifier, lightingModel: .lit)
+let entity = ModelEntity(mesh: .generateSphere(radius: 0.5), materials: [material])
+
+// 从已有 USDZ 材质创建（保留纹理）
+guard var modelComp = robot.components[ModelComponent.self] else { return }
+modelComp.materials = try modelComp.materials.map { try CustomMaterial(from: $0, surfaceShader: surfaceShader) }
+robot.components[ModelComponent.self] = modelComp
+```
+
+### IBL 环境光照
+```swift
+if let resource = try? EnvironmentResource.generate(fromEquirectangular: myHDRImage) {
+    rootNode.components.set(ImageBasedLightComponent(environment: resource, intensityExponent: 10.0))
+}
+```
+
+## App Intents 进阶（FocusFilter / 交互式 Snippets / 参数提供器）
+
+### FocusFilter（焦点过滤）
+```swift
+struct ExampleFocusFilter: SetFocusFilterIntent {
+    @Parameter(title: "Use Dark Mode", default: false) var alwaysUseDarkMode: Bool
+    @Parameter(title: "Status Message") var status: String?
+    @Parameter(title: "Selected Account") var account: AccountEntity?
+
+    var appContext: FocusFilterAppContext {
+        let predicate: NSPredicate = account != nil
+            ? NSPredicate(format: "SELF IN %@", [account!.id])
+            : NSPredicate(value: true)
+        return FocusFilterAppContext(notificationFilterPredicate: predicate)
+    }
+}
+```
+
+### 交互式 Snippets
+```swift
+// 返回带 SwiftUI View 的结果
+func perform() async throws -> some IntentResult & ShowsSnippetView {
+    .result(view: LandmarkView(landmark: landmark, isFavorite: isFavorite))
+}
+
+// Snippet 序列 + 确认
+try await requestConfirmation(actionName: .search,
+    snippetIntent: TicketRequestSnippetIntent(searchRequest: request))
+```
+
+### 动态参数选项
+```swift
+struct LocationOptionsProvider: DynamicOptionsProvider {
+    @Dependency private var trailManager: TrailDataManager
+    func results() async throws -> [String] {
+        trailManager.uniqueLocations.sorted(using: KeyPathComparator(\.self, comparator: .localizedStandard))
+    }
+}
+
+// 条件参数摘要
+static var parameterSummary: some ParameterSummary {
+    When(\.$location, .hasAnyValue) {
+        Summary("Find trails within \(\.$searchRadius) of \(\.$location)")
+    } otherwise: {
+        Summary("Find trails from \(\.$trailCollection)")
+    }
+}
+```
+
+## Foundation 进阶（后台下载 / 认证挑战 / Handoff）
+
+### 后台 URLSession 下载
+```swift
+private lazy var urlSession: URLSession = {
+    let config = URLSessionConfiguration.background(withIdentifier: "MySession")
+    config.isDiscretionary = true
+    config.sessionSendsLaunchEvents = true
+    return URLSession(configuration: config, delegate: self, delegateQueue: nil)
+}()
+
+let task = urlSession.downloadTask(with: url)
+task.earliestBeginDate = Date().addingTimeInterval(3600)
+task.countOfBytesClientExpectsToReceive = 500 * 1024
+task.resume()
+
+// AppDelegate 保存系统回调
+func application(_ app: UIApplication, handleEventsForBackgroundURLSession id: String,
+                 completionHandler: @escaping () -> Void) {
+    backgroundCompletionHandler = completionHandler
+}
+
+// 下载完成
+func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                didFinishDownloadingTo location: URL) {
+    let dest = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        .appendingPathComponent(location.lastPathComponent)
+    try? FileManager.default.moveItem(at: location, to: dest)
+}
+```
+
+### 认证挑战（HTTP Basic / Server Trust）
+```swift
+// HTTP Basic 认证
+func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge,
+                completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+    guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic else {
+        completionHandler(.performDefaultHandling, nil); return
+    }
+    let credential = URLCredential(user: username, password: password, persistence: .forSession)
+    completionHandler(.useCredential, credential)
+}
+
+// 服务器证书验证
+guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+      let serverTrust = challenge.protectionSpace.serverTrust else {
+    completionHandler(.performDefaultHandling, nil); return
+}
+completionHandler(.useCredential, URLCredential(trust: serverTrust))
+```
+
+### Handoff / NSUserActivity
+```swift
+let activity = NSUserActivity(activityType: "com.app.viewItem")
+activity.isEligibleForHandoff = true
+activity.title = "Viewing Item"
+activity.addUserInfoEntries(from: ["itemID": item.id])
+
+// 接收端
+func application(_ app: UIApplication, continue userActivity: NSUserActivity,
+                 restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+    guard let itemID = userActivity.userInfo?["itemID"] as? String else { return false }
+    navigate(to: itemID)
+    return true
+}
+```
+
+## Authentication Services 进阶（Security Key / 凭证扩展）
+
+### Security Key 认证（物理密钥）
+```swift
+let provider = ASAuthorizationSecurityKeyPublicKeyCredentialProvider("example.com")
+let request = provider.createCredentialRegistrationRequest(
+    challenge: challenge, displayName: "Anne", name: "anne@icloud.com", userID: "anne")
+request.credentialParameters = [ASAuthorizationPublicKeyCredentialParameters(algorithm: .ES256)]
+let controller = ASAuthorizationController(authorizationRequests: [request])
+controller.delegate = self; controller.performRequests()
+
+// 断言（验证）
+let assertionRequest = provider.createCredentialAssertionRequestWithChallenge(challenge)
+```
+
+### Credential Provider Extension（密码自动升级）
+```swift
+class AccountAuthModVC: ASAccountAuthenticationModificationViewController {
+    override func changePasswordWithoutUserInteraction(
+        for serviceID: ASCredentialServiceIdentifier,
+        existingCredential: ASPasswordCredential, newPassword: String, userInfo: [AnyHashable: Any]?) {
+        // 向服务器验证并更新密码
+        let newCredential = ASPasswordCredential(user: existingCredential.user, password: newPassword)
+        extensionContext.completeChangePasswordRequest(updatedCredential: newCredential)
+    }
+}
+
+// 升级为 Sign in with Apple
+extensionContext.getSignInWithAppleUpgradeAuthorization(state: myState, nonce: myNonce) { credential, error in
+    guard let credential else { return }
+    let userID = credential.user
+    // 向服务器提交转换
+    self.extensionContext.completeUpgradeToSignInWithApple()
+}
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
@@ -4446,6 +5361,22 @@ ScrollView { content }
 27. **Swift Macros**：宏实现必须在独立 macro target（不能和主 App 混编）；宏只能操作语法树不能读取类型信息
 28. **崩溃诊断**：App Store 崩溃报告需确保 dSYM 已上传；`0x8badf00d` 是 watchdog 超时（主线程阻塞 >20 秒）
 29. **xcconfig**：`$(inherited)` 必须显式写，否则覆盖而非追加；条件设置 `[sdk=*][arch=*]` 可组合使用
+30. **Combine**：`AnyCancellable` 必须持有引用，否则订阅立即取消；`receive(on: RunLoop.main)` 确保 UI 更新在主线程
+31. **NWConnection**：连接必须调用 `start(queue:)` 才会开始；TLS 自签名证书需自定义 `verify_block`
+32. **CoreLocation CLMonitor**：iOS 17+ 替代旧 `CLLocationManager` 区域监控；`CLBackgroundActivitySession` 需在前台先获取授权
+33. **iBeacon**：`startMonitoring` 检测进出区域，`startRangingBeacons` 测距；信号强度受环境影响大
+34. **MapKit Overlays**：`rendererFor overlay` 代理方法按类型分发渲染器；GeoJSON 用 `MKGeoJSONDecoder` 解析
+35. **通信通知**：需在 Notification Service Extension 中 `donate()` INInteraction；`mutable-content: 1` 才能触发 NSE
+36. **CoreData History**：`transactionAuthor` 保存后立即重置为 nil；历史 token 需持久化到磁盘
+37. **SwiftData History**：`preserveValueOnDeletion` 标记的属性可在 tombstone 中读取；`fetchHistory` 需在独立 `ModelContext` 中调用
+38. **VNDetectTrajectoriesRequest**：需连续帧输入，单张图片无效；`objectMinimumNormalizedRadius` 单位是归一化值
+39. **ARKit LiDAR**：仅 Pro 机型支持 `.sceneDepth`；`smoothedSceneDepth` 比 `sceneDepth` 更稳定
+40. **ARWorldMap**：保存前检查 `worldMappingStatus == .mapped`；加载时用 `.resetTracking` 选项
+41. **RealityKit 粒子**：`ParticleEmitterComponent.Presets` 提供预设模板；自定义粒子图像需 `.raw` semantic
+42. **CustomMaterial**：Metal shader 中 USDZ 纹理需翻转 Y 坐标 `uv.y = 1.0 - uv.y`
+43. **FocusFilter**：`SetFocusFilterIntent` 的 `appContext` 控制通知过滤谓词；实体需实现 `suggestedEntities()`
+44. **后台下载**：`URLSessionConfiguration.background` 的任务在 App 终止后仍继续；必须在 AppDelegate 保存 `completionHandler`
+45. **Security Key**：仅支持 `.ES256` 算法；注册和断言使用不同的 Provider 方法
 
 ## 崩溃报告分析与符号化
 ```swift
@@ -4632,5 +5563,11 @@ xcodebuild test -scheme MyApp -run-tests-until-failure -test-iterations 100
 - Network：https://developer.apple.com/documentation/network
 - SafariServices：https://developer.apple.com/documentation/safariservices
 - PassKit：https://developer.apple.com/documentation/passkit
+- Combine：https://developer.apple.com/documentation/combine
+- Network：https://developer.apple.com/documentation/network
+- MapKit：https://developer.apple.com/documentation/mapkit
+- CoreLocation：https://developer.apple.com/documentation/corelocation
+- AuthenticationServices：https://developer.apple.com/documentation/authenticationservices
+- Intents：https://developer.apple.com/documentation/intents
 
 **编辑规则**：仅修改此 SKILL.md → 运行 build 脚本生成各 AI 工具配置。
