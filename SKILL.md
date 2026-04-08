@@ -12,7 +12,7 @@ description: >
 
 # SwiftUI Development - Production Knowledge Base（2026 年 4 月完整版）
 
-专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。覆盖 SwiftUI、Apple Intelligence、Liquid Glass、SwiftData、WidgetKit、App Intents、HealthKit、CloudKit、RealityKit、Apple Pay、AVFoundation、CoreML、Vision、ARKit、CoreImage、EventKit、Contacts、Passkeys、BackgroundTasks、SpriteKit、CreateML、DocumentGroup、Layout 协议、Accessibility、Localization、Combine、Network Framework、CoreLocation 高级、CoreData、Authentication Services 等 **40+ 框架**，74 个章节，800+ 代码示例。
+专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。覆盖 SwiftUI、Apple Intelligence、Liquid Glass、SwiftData、WidgetKit、App Intents、HealthKit、CloudKit、RealityKit、Apple Pay、AVFoundation、CoreML、Vision、ARKit、CoreImage、EventKit、Contacts、Passkeys、BackgroundTasks、SpriteKit、CreateML、DocumentGroup、Layout 协议、Accessibility、Localization、Combine、Network Framework、CoreLocation 高级、CoreData、Authentication Services、watchOS、tvOS、visionOS、App Store Connect API 等 **45+ 框架**，100+ 章节，1000+ 代码示例。
 
 ## 平台快照
 | 项目 | 值 |
@@ -6838,6 +6838,494 @@ try await UNUserNotificationCenter.current().add(request)
 UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
 ```
 
+## 深度链接路由（完整架构）
+
+### 路由定义（URL Scheme + Universal Links 统一）
+```swift
+enum AppRoute: Hashable {
+    case home
+    case articleDetail(id: String)
+    case userProfile(username: String)
+    case settings(section: String?)
+    case search(query: String)
+
+    init?(url: URL) {
+        let path = url.pathComponents.dropFirst()  // 去掉 "/"
+        let params = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?.reduce(into: [:]) { $0[$1.name] = $1.value } ?? [:]
+        switch path.first {
+        case "articles": guard let id = path.dropFirst().first else { return nil }; self = .articleDetail(id: String(id))
+        case "users": guard let u = path.dropFirst().first else { return nil }; self = .userProfile(username: String(u))
+        case "settings": self = .settings(section: params["section"])
+        case "search": self = .search(query: params["q"] ?? "")
+        default: return nil
+        }
+    }
+}
+```
+
+### Router（含延迟导航 / 推送通知处理）
+```swift
+@MainActor @Observable
+final class Router {
+    var path = NavigationPath()
+    var pendingRoute: AppRoute?  // 冷启动时暂存
+
+    func navigate(to route: AppRoute) { path.append(route) }
+    func popToRoot() { path = NavigationPath() }
+
+    func handle(url: URL) {
+        guard let route = AppRoute(url: url) else { return }
+        path = NavigationPath(); navigate(to: route)
+    }
+
+    func handle(notification: UNNotificationResponse) {
+        let userInfo = notification.notification.request.content.userInfo
+        guard let urlStr = userInfo["deep_link"] as? String,
+              let url = URL(string: urlStr), let route = AppRoute(url: url) else { return }
+        if UIApplication.shared.applicationState == .background {
+            navigate(to: route)
+        } else {
+            pendingRoute = route  // 等视图树就绪
+        }
+    }
+
+    func processPendingRoute() {
+        guard let route = pendingRoute else { return }
+        pendingRoute = nil; navigate(to: route)
+    }
+}
+```
+
+### NavigationStack 集成
+```swift
+struct RootView: View {
+    @Environment(Router.self) var router
+    var body: some View {
+        @Bindable var router = router
+        NavigationStack(path: $router.path) {
+            HomeView()
+                .navigationDestination(for: AppRoute.self) { route in
+                    switch route {
+                    case .home: HomeView()
+                    case .articleDetail(let id): ArticleDetailView(id: id)
+                    case .userProfile(let u): UserProfileView(username: u)
+                    case .settings(let s): SettingsView(section: s)
+                    case .search(let q): SearchView(initialQuery: q)
+                    }
+                }
+        }
+        .onOpenURL { url in router.handle(url: url) }
+        .task { router.processPendingRoute() }
+    }
+}
+
+@main struct MyApp: App {
+    @State private var router = Router()
+    var body: some Scene {
+        WindowGroup { RootView().environment(router) }
+    }
+}
+```
+
+## 统一错误处理
+
+### AppError 类型（typed throws）
+```swift
+enum AppError: LocalizedError {
+    case network(NetworkError)
+    case database(Error)
+    case authentication(AuthError)
+    case validation(String)
+    case unknown(Error)
+
+    init(_ error: Error) {
+        switch error {
+        case let e as NetworkError: self = .network(e)
+        case let e as AuthError: self = .authentication(e)
+        default: self = .unknown(error)
+        }
+    }
+
+    var errorDescription: String? {
+        switch self {
+        case .network(let e): e.localizedDescription
+        case .database: "数据存储错误，请重试"
+        case .authentication(let e): e.localizedDescription
+        case .validation(let msg): msg
+        case .unknown: "发生未知错误"
+        }
+    }
+
+    var isRetryable: Bool {
+        switch self {
+        case .network, .database: true
+        case .authentication, .validation, .unknown: false
+        }
+    }
+}
+
+enum NetworkError: LocalizedError {
+    case noConnection, timeout, serverError(statusCode: Int), invalidResponse
+    var errorDescription: String? {
+        switch self {
+        case .noConnection: "无网络连接"
+        case .timeout: "请求超时"
+        case .serverError(let code): "服务器错误（\(code)）"
+        case .invalidResponse: "无效数据"
+        }
+    }
+}
+
+// async throws(AppError)（Swift 6 typed throws）
+func fetchArticle(id: String) async throws(AppError) -> Article {
+    do { return try await repository.fetchArticle(id: id) }
+    catch let error as AppError { throw error }
+    catch { throw AppError(error) }
+}
+```
+
+### 全局错误展示 Modifier
+```swift
+struct ErrorAlertModifier: ViewModifier {
+    @Binding var error: AppError?
+    func body(content: Content) -> some View {
+        content.alert(error?.errorDescription ?? "错误", isPresented: .constant(error != nil), presenting: error) { err in
+            if err.isRetryable { Button("重试") { /* 触发重试 */ } }
+            Button("关闭", role: .cancel) { error = nil }
+        }
+    }
+}
+extension View {
+    func errorAlert(error: Binding<AppError?>) -> some View { modifier(ErrorAlertModifier(error: error)) }
+}
+
+// 使用
+List { ... }.errorAlert(error: $vm.error)
+```
+
+## 分页 / 无限滚动
+
+### 分页状态机
+```swift
+enum PaginationState: Equatable {
+    case idle, loading, loaded(hasMore: Bool), error(String)
+    var canLoadMore: Bool { if case .loaded(let h) = self { return h }; return false }
+}
+
+@MainActor @Observable
+final class PaginatedViewModel<T: Identifiable & Sendable> {
+    private(set) var items: [T] = []
+    private(set) var state: PaginationState = .idle
+    private var currentPage = 0
+    private let pageSize = 20
+    private let loader: (Int, Int) async throws -> [T]
+
+    init(loader: @escaping (Int, Int) async throws -> [T]) { self.loader = loader }
+
+    func loadFirst() async {
+        guard state == .idle else { return }
+        state = .loading; currentPage = 0; items = []
+        await loadPage()
+    }
+
+    func loadMore() async {
+        guard state.canLoadMore else { return }
+        state = .loading; await loadPage()
+    }
+
+    private func loadPage() async {
+        do {
+            let new = try await loader(currentPage, pageSize)
+            items.append(contentsOf: new)
+            currentPage += 1
+            state = .loaded(hasMore: new.count >= pageSize)
+        } catch { state = .error(error.localizedDescription) }
+    }
+}
+```
+
+### 无限滚动 View
+```swift
+struct InfiniteScrollView<T: Identifiable & Sendable, Row: View>: View {
+    @Bindable var vm: PaginatedViewModel<T>
+    let row: (T) -> Row
+
+    var body: some View {
+        List {
+            ForEach(vm.items) { item in
+                row(item)
+                    .onAppear {
+                        if item.id == vm.items.last?.id { Task { await vm.loadMore() } }
+                    }
+            }
+            switch vm.state {
+            case .loading: ProgressView().frame(maxWidth: .infinity).listRowSeparator(.hidden)
+            case .error(let msg): Button("重试") { Task { await vm.loadMore() } }.foregroundStyle(.red)
+            case .loaded(hasMore: false): Text("已加载全部").foregroundStyle(.secondary).frame(maxWidth: .infinity)
+            default: EmptyView()
+            }
+        }
+        .refreshable { await vm.loadFirst() }
+        .task { if vm.state == .idle { await vm.loadFirst() } }
+    }
+}
+
+// 使用
+@State private var vm = PaginatedViewModel<Article> { page, size in
+    try await ArticleAPI.fetch(page: page, size: size)
+}
+InfiniteScrollView(vm: vm) { article in ArticleRow(article: article) }
+
+// 提前 5 个触发预加载
+ForEach(Array(vm.items.enumerated()), id: \.element.id) { index, item in
+    row(item).onAppear {
+        if index >= vm.items.count - 5 { Task { await vm.loadMore() } }
+    }
+}
+```
+
+## 图片缓存策略
+
+### URLCache 配置
+```swift
+extension URLCache {
+    static let imageCache = URLCache(
+        memoryCapacity: 50 * 1024 * 1024,   // 50MB 内存
+        diskCapacity: 200 * 1024 * 1024,     // 200MB 磁盘
+        directory: URL.cachesDirectory.appending(path: "ImageCache"))
+}
+extension URLSession {
+    static let imageSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.urlCache = .imageCache
+        config.requestCachePolicy = .returnCacheDataElseLoad
+        return URLSession(configuration: config)
+    }()
+}
+```
+
+### 轻量图片缓存（NSCache + 磁盘）
+```swift
+@Observable
+final class ImageCache {
+    static let shared = ImageCache()
+    private let memory = NSCache<NSString, UIImage>()
+    private let cacheDir = URL.cachesDirectory.appending(path: "Images")
+
+    private init() {
+        memory.countLimit = 100; memory.totalCostLimit = 50 * 1024 * 1024
+        try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+    }
+
+    func image(for url: URL) -> UIImage? {
+        let key = url.absoluteString as NSString
+        if let img = memory.object(forKey: key) { return img }
+        let path = cacheDir.appending(path: "\(url.absoluteString.hash).jpg")
+        if let data = try? Data(contentsOf: path), let img = UIImage(data: data) {
+            memory.setObject(img, forKey: key); return img
+        }
+        return nil
+    }
+
+    func store(_ image: UIImage, for url: URL) {
+        memory.setObject(image, forKey: url.absoluteString as NSString)
+        Task.detached(priority: .background) { [weak self] in
+            guard let self else { return }
+            let path = self.cacheDir.appending(path: "\(url.absoluteString.hash).jpg")
+            try? image.jpegData(compressionQuality: 0.8)?.write(to: path)
+        }
+    }
+
+    func clearMemory() { memory.removeAllObjects() }
+}
+```
+
+### CachedAsyncImage 组件
+```swift
+struct CachedAsyncImage: View {
+    let url: URL?
+    @State private var image: UIImage?
+    @State private var isLoading = false
+
+    var body: some View {
+        Group {
+            if let image { Image(uiImage: image).resizable().aspectRatio(contentMode: .fill) }
+            else if isLoading { ProgressView() }
+            else { Image(systemName: "photo").resizable().foregroundStyle(.secondary) }
+        }
+        .task(id: url) {
+            guard let url else { return }
+            if let cached = ImageCache.shared.image(for: url) { image = cached; return }
+            isLoading = true; defer { isLoading = false }
+            if let (data, _) = try? await URLSession.imageSession.data(from: url),
+               let img = UIImage(data: data) {
+                ImageCache.shared.store(img, for: url); image = img
+            }
+        }
+    }
+}
+
+// 内存压力响应
+func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
+    ImageCache.shared.clearMemory()
+    URLCache.imageCache.removeAllCachedResponses()
+}
+```
+
+## App 架构模式（MVVM + Repository + UseCase）
+
+### Repository 协议 + 实现
+```swift
+// Domain 层：纯协议
+protocol ArticleRepository {
+    func fetchArticles(page: Int) async throws -> [Article]
+    func fetchArticle(id: String) async throws -> Article
+    func saveArticle(_ article: Article) async throws
+}
+
+// Data 层：缓存 → 网络 → 本地持久化
+final class ArticleRepositoryImpl: ArticleRepository {
+    private let remote: ArticleRemoteDataSource
+    private let local: ArticleLocalDataSource
+    private let cache: ArticleCache
+
+    init(remote: ArticleRemoteDataSource, local: ArticleLocalDataSource, cache: ArticleCache) {
+        self.remote = remote; self.local = local; self.cache = cache
+    }
+
+    func fetchArticles(page: Int) async throws -> [Article] {
+        if let cached = cache.articles(page: page) { return cached }
+        let articles = try await remote.fetchArticles(page: page)
+        try await local.saveArticles(articles)
+        cache.store(articles, page: page)
+        return articles
+    }
+}
+```
+
+### ViewModel（Swift 6.2 严格并发）
+```swift
+@MainActor @Observable
+final class HomeViewModel {
+    private(set) var articles: [Article] = []
+    private(set) var isLoading = false
+    private(set) var error: AppError?
+
+    private let fetchArticles: FetchArticlesUseCase
+
+    init(fetchArticles: FetchArticlesUseCase) {
+        self.fetchArticles = fetchArticles
+    }
+
+    func onAppear() async { await load() }
+    func refresh() async { await load() }
+
+    private func load() async {
+        guard !isLoading else { return }
+        isLoading = true; error = nil
+        defer { isLoading = false }
+        do { articles = try await fetchArticles() }
+        catch { self.error = AppError(error) }
+    }
+}
+```
+
+### UseCase（单一职责 + callAsFunction）
+```swift
+struct FetchArticlesUseCase {
+    private let repository: any ArticleRepository
+    init(repository: any ArticleRepository) { self.repository = repository }
+
+    func callAsFunction(page: Int = 1) async throws -> [Article] {
+        try await repository.fetchArticles(page: page)
+            .filter { !$0.isHidden }
+            .sorted { $0.publishedAt > $1.publishedAt }
+    }
+}
+```
+
+## 依赖注入（DI）
+
+**方案对比**：
+| 方案 | 适用场景 | 优点 | 缺点 |
+|---|---|---|---|
+| 构造器注入 | ViewModel/UseCase/Repository | 明确依赖、易测试 | 层层传递繁琐 |
+| `@Environment` | View 层全局依赖 | SwiftUI 原生 | 仅限 View 层 |
+| `@Dependency` | 全局（含非 View 层）| 功能强、支持测试覆盖 | 需三方库 |
+| 单例 | 无状态工具（日志/分析）| 简单 | 难测试、全局状态 |
+
+### 轻量 DI 容器（无三方库）
+```swift
+final class DIContainer {
+    static let shared = DIContainer()
+    private var factories: [ObjectIdentifier: Any] = [:]
+    private var singletons: [ObjectIdentifier: Any] = [:]
+
+    func register<T>(_ type: T.Type, factory: @escaping () -> T) {
+        factories[ObjectIdentifier(type)] = factory
+    }
+    func registerSingleton<T>(_ type: T.Type, factory: @escaping () -> T) {
+        singletons[ObjectIdentifier(type)] = factory()
+    }
+    func resolve<T>(_ type: T.Type) -> T {
+        let key = ObjectIdentifier(type)
+        if let s = singletons[key] as? T { return s }
+        guard let f = factories[key] as? () -> T else { fatalError("No registration for \(type)") }
+        return f()
+    }
+}
+
+// App 启动时注册
+extension DIContainer {
+    static func setup() {
+        let c = DIContainer.shared
+        c.registerSingleton(ArticleCache.self) { .init() }
+        c.register(ArticleRemoteDataSource.self) { ArticleRemoteDataSourceImpl(session: .shared) }
+        c.registerSingleton((any ArticleRepository).self) {
+            ArticleRepositoryImpl(
+                remote: c.resolve(ArticleRemoteDataSource.self),
+                local: ArticleLocalDataSourceImpl(),
+                cache: c.resolve(ArticleCache.self))
+        }
+        c.register(FetchArticlesUseCase.self) {
+            FetchArticlesUseCase(repository: c.resolve((any ArticleRepository).self))
+        }
+    }
+}
+```
+
+### Environment Key 注入（View 层）
+```swift
+private struct ArticleRepoKey: EnvironmentKey {
+    static let defaultValue: any ArticleRepository = ArticleRepositoryImpl.preview
+}
+extension EnvironmentValues {
+    var articleRepository: any ArticleRepository {
+        get { self[ArticleRepoKey.self] }
+        set { self[ArticleRepoKey.self] = newValue }
+    }
+}
+
+// 使用
+@Environment(\.articleRepository) var repo
+
+// Preview 中替换
+#Preview { ArticleListView().environment(\.articleRepository, MockArticleRepository()) }
+```
+
+### 测试中替换依赖
+```swift
+@Test func loadSuccess() async throws {
+    let mockRepo = MockArticleRepository()
+    mockRepo.stubbedArticles = Article.mocks
+    let useCase = FetchArticlesUseCase(repository: mockRepo)
+    let vm = await HomeViewModel(fetchArticles: useCase)
+    await vm.onAppear()
+    #expect(await vm.articles.count == Article.mocks.count)
+}
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
@@ -6922,6 +7410,13 @@ UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentif
 81. **dSYM 管理**：Build Settings 必须设为 DWARF with dSYM File；dSYM 和 binary 通过 build UUID 配对，版本不同则不匹配
 82. **APNs HTTP/2**：HPACK 压缩必须正确使用（:path 用 literal without indexing）；JSON payload 最大 4KB（VoIP 5KB）
 83. **本地通知**：`UNCalendarNotificationTrigger` 用 DateComponents 不是 Date；取消通知用 `removePendingNotificationRequests(withIdentifiers:)`
+84. **MVVM 架构**：ViewModel 必须 `@MainActor @Observable`；用 `private(set)` 防止 View 直接修改状态；UseCase 用 `callAsFunction` 简化调用
+85. **DI 容器**：`registerSingleton` 立即创建实例，`register` 每次解析时创建新实例；`resolve` 找不到注册时会 `fatalError`
+86. **分页状态机**：`loadMore` 前检查 `canLoadMore`；用 `onAppear` 最后一个元素触发或提前 5 个预加载；`refreshable` 重置到第一页
+87. **图片缓存**：`NSCache` 自动响应内存压力释放（无需手动清理内存部分）；磁盘写入用 `Task.detached(priority: .background)` 避免阻塞主线程
+88. **CachedAsyncImage**：`.task(id: url)` 确保 URL 变化时重新加载；`applicationDidReceiveMemoryWarning` 中清空内存和 URLCache
+89. **深度链接路由**：冷启动时用 `pendingRoute` 暂存，在根 View 的 `.task` 中处理；`onOpenURL` 仅在 App 已运行时触发
+90. **统一错误处理**：`isRetryable` 区分可重试错误；typed throws `throws(AppError)` 需 Swift 6+；`errorAlert` modifier 全局使用避免每个 View 重复处理
 
 ## 崩溃报告分析与符号化
 ```swift
