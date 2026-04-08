@@ -1116,36 +1116,130 @@ class PerformanceTests: XCTestCase {
 ```
 
 
-## AVFoundation（音视频）
+## AVFoundation（音视频完整指南）
 
-### 视频播放
+### 视频播放（Observation 框架，iOS 26）
 ```swift
 import AVKit
 
-struct VideoView: View {
-    @State private var player = AVPlayer(url: Bundle.main.url(forResource: "demo", withExtension: "mp4")!)
+// 全局开启 Observation 支持（必须在创建播放器之前）
+AVPlayer.isObservationEnabled = true
+
+struct PlayerView: View {
+    let url: URL
+    @State private var player: AVPlayer?
+
     var body: some View {
-        VideoPlayer(player: player)
-            .frame(height: 300)
-            .onAppear { player.play() }
-            .onDisappear { player.pause() }
+        ZStack {
+            if let player {
+                VideoPlayer(player: player)
+                TransportControls(player: player)
+            } else { ProgressView() }
+        }
+        .task { player = AVPlayer(url: url) }  // 延迟创建
+    }
+}
+
+// 直接在 SwiftUI 中观察播放状态（无需 KVO）
+struct TransportControls: View {
+    let player: AVPlayer
+    private var isPlaying: Bool { player.timeControlStatus == .playing }
+    var body: some View {
+        Button {
+            isPlaying ? player.pause() : player.play()
+        } label: {
+            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+        }
+        .disabled(player.currentItem?.status != .readyToPlay)
     }
 }
 ```
 
-### 相机拍摄（AVCaptureSession，用 actor 隔离）
+### 播放进度监控
 ```swift
+// 周期性时间观察（驱动进度条 UI）
+let interval = CMTime(value: 1, timescale: 2)  // 每 0.5 秒
+timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+    self?.currentTime = time.seconds
+    self?.duration = player.currentItem?.duration.seconds ?? 0
+}
+
+// 边界时间观察（里程碑事件）
+let times = quarterTimes.map { NSValue(time: $0) }
+timeObserver = player.addBoundaryTimeObserver(forTimes: times, queue: .main) {
+    updateQuarterProgress()
+}
+
+// 必须配对移除
+player.removeTimeObserver(timeObserver)
+
+// Seeking
+await player.seek(to: CMTime(seconds: 30, preferredTimescale: 600))
+// 精确 seeking（帧级精度）
+await player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+```
+
+### 相机拍摄完整架构（AVCam 模式）
+```swift
+import AVFoundation
+
+// CaptureService 用 actor 隔离，确保不阻塞主线程
 actor CaptureService {
-    private let session = AVCaptureSession()
+    let captureSession = AVCaptureSession()
     private let photoOutput = AVCapturePhotoOutput()
+    private let movieOutput = AVCaptureMovieFileOutput()
+    private var activeVideoInput: AVCaptureDeviceInput?
+
+    // 设备查找
+    private func defaultCamera() throws -> AVCaptureDevice {
+        if let dual = AVCaptureDevice.default(.builtInDualCamera, for: .video, position: .back) { return dual }
+        if let wide = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) { return wide }
+        throw CameraError.noDevice
+    }
 
     func setUp() throws {
-        let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)!
-        let input = try AVCaptureDeviceInput(device: device)
-        session.sessionPreset = .photo
-        if session.canAddInput(input) { session.addInput(input) }
-        if session.canAddOutput(photoOutput) { session.addOutput(photoOutput) }
-        session.startRunning()
+        let camera = try defaultCamera()
+        let videoInput = try AVCaptureDeviceInput(device: camera)
+        let audioDevice = AVCaptureDevice.default(for: .audio)
+        let audioInput = audioDevice.flatMap { try? AVCaptureDeviceInput(device: $0) }
+
+        captureSession.beginConfiguration()
+        defer { captureSession.commitConfiguration() }
+
+        captureSession.sessionPreset = .photo
+        if captureSession.canAddInput(videoInput) { captureSession.addInput(videoInput) }
+        if let audioInput, captureSession.canAddInput(audioInput) { captureSession.addInput(audioInput) }
+        if captureSession.canAddOutput(photoOutput) { captureSession.addOutput(photoOutput) }
+        activeVideoInput = videoInput
+    }
+
+    // 切换前后摄像头
+    func switchCamera(to device: AVCaptureDevice) throws {
+        guard let current = activeVideoInput else { return }
+        captureSession.beginConfiguration()
+        defer { captureSession.commitConfiguration() }
+        captureSession.removeInput(current)
+        let newInput = try AVCaptureDeviceInput(device: device)
+        if captureSession.canAddInput(newInput) {
+            captureSession.addInput(newInput)
+            activeVideoInput = newInput
+        } else {
+            captureSession.addInput(current)  // 失败时恢复
+        }
+    }
+
+    // 切换拍照/录像模式
+    func setCaptureMode(_ mode: CaptureMode) throws {
+        captureSession.beginConfiguration()
+        defer { captureSession.commitConfiguration() }
+        switch mode {
+        case .photo:
+            captureSession.sessionPreset = .photo
+            captureSession.removeOutput(movieOutput)
+        case .video:
+            captureSession.sessionPreset = .high
+            if captureSession.canAddOutput(movieOutput) { captureSession.addOutput(movieOutput) }
+        }
     }
 }
 
@@ -1153,26 +1247,226 @@ actor CaptureService {
 var isAuthorized: Bool {
     get async {
         let status = AVCaptureDevice.authorizationStatus(for: .video)
-        if status == .notDetermined {
-            return await AVCaptureDevice.requestAccess(for: .video)
-        }
-        return status == .authorized
+        var authorized = status == .authorized
+        if status == .notDetermined { authorized = await AVCaptureDevice.requestAccess(for: .video) }
+        return authorized
     }
 }
 
-// SwiftUI 预览层
+// SwiftUI 预览层（AVCaptureVideoPreviewLayer）
+class PreviewView: UIView {
+    override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
+    var previewLayer: AVCaptureVideoPreviewLayer { layer as! AVCaptureVideoPreviewLayer }
+    func setSession(_ session: AVCaptureSession) { previewLayer.session = session }
+}
+
 struct CameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        let layer = AVCaptureVideoPreviewLayer(session: session)
-        layer.videoGravity = .resizeAspectFill
-        layer.frame = view.bounds
-        view.layer.addSublayer(layer)
-        return view
+    func makeUIView(context: Context) -> PreviewView {
+        let preview = PreviewView()
+        preview.setSession(session)
+        return preview
     }
-    func updateUIView(_ uiView: UIView, context: Context) {}
+    func updateUIView(_ view: PreviewView, context: Context) {}
 }
+```
+
+### 照片捕获（Depth / Live Photo / RAW）
+```swift
+// 带深度数据的照片
+let photoSettings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.hevc])
+photoSettings.isDepthDataDeliveryEnabled = photoOutput.isDepthDataDeliverySupported
+photoOutput.capturePhoto(with: photoSettings, delegate: captureDelegate)
+
+// 深度数据在 delegate 中获取
+func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+    if let depthData = photo.depthData {
+        let depthMap = depthData.depthDataMap  // CVPixelBuffer
+    }
+    if let photoData = photo.fileDataRepresentation() {
+        saveToPhotosLibrary(photoData)  // 自动嵌入深度数据
+    }
+}
+
+// Live Photo 拍摄（需要音频输入 + livePhotoMovieFileURL）
+photoOutput.isLivePhotoCaptureEnabled = photoOutput.isLivePhotoCaptureSupported
+let liveSettings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.hevc])
+liveSettings.livePhotoMovieFileURL = URL.temporaryDirectory.appending(path: "\(UUID().uuidString).mov")
+photoOutput.capturePhoto(with: liveSettings, delegate: delegate)
+
+// 保存 Live Photo 到相册（静态图 + 配对视频）
+PHPhotoLibrary.shared().performChanges {
+    let request = PHAssetCreationRequest.forAsset()
+    request.addResource(with: .photo, data: stillImageData, options: nil)
+    let options = PHAssetResourceCreationOptions()
+    options.shouldMoveFile = true
+    request.addResource(with: .pairedVideo, fileURL: movieURL, options: options)
+}
+
+// Apple ProRAW 拍摄
+photoOutput.isAppleProRAWEnabled = photoOutput.isAppleProRAWSupported
+let rawFormat = photoOutput.availableRawPhotoPixelFormatTypes.first {
+    AVCapturePhotoOutput.isAppleProRAWPixelFormat($0)
+}!
+let rawSettings = AVCapturePhotoSettings(rawPixelFormatType: rawFormat,
+    processedFormat: [AVVideoCodecKey: AVVideoCodecType.hevc])
+// photo.fileDataRepresentation() 返回 DNG 格式数据
+
+// 包围曝光（Bracketed Capture）
+let exposureValues: [Float] = [-2, 0, +2]
+let bracketSettings = exposureValues.map {
+    AVCaptureAutoExposureBracketedStillImageSettings.autoExposureSettings(exposureTargetBias: $0)
+}
+let bracketPhotoSettings = AVCapturePhotoBracketSettings(rawPixelFormatType: 0,
+    processedFormat: [AVVideoCodecKey: AVVideoCodecType.hevc], bracketedSettings: bracketSettings)
+bracketPhotoSettings.isLensStabilizationEnabled = photoOutput.isLensStabilizationDuringBracketedCaptureSupported
+```
+
+### LiDAR 深度相机
+```swift
+// 检查 LiDAR 支持（iPhone 12 Pro+）
+guard let device = AVCaptureDevice.default(.builtInLiDARDepthCamera, for: .video, position: .back) else { return }
+
+// 查找支持深度的格式
+guard let format = device.formats.last(where: {
+    $0.formatDescription.dimensions.width == 1920 &&
+    !$0.isVideoBinned && !$0.supportedDepthDataFormats.isEmpty
+}), let depthFormat = format.supportedDepthDataFormats.last(where: {
+    CMFormatDescriptionGetMediaSubType($0.formatDescription) == kCVPixelFormatType_DepthFloat16
+}) else { return }
+
+try device.lockForConfiguration()
+device.activeFormat = format
+device.activeDepthDataFormat = depthFormat
+device.unlockForConfiguration()
+
+// 同步视频 + 深度输出
+let videoOutput = AVCaptureVideoDataOutput()
+let depthOutput = AVCaptureDepthDataOutput()
+depthOutput.isFilteringEnabled = true
+session.addOutput(videoOutput)
+session.addOutput(depthOutput)
+
+let synchronizer = AVCaptureDataOutputSynchronizer(dataOutputs: [videoOutput, depthOutput])
+synchronizer.setDelegate(self, queue: videoQueue)
+
+// 同步回调
+func dataOutputSynchronizer(_ sync: AVCaptureDataOutputSynchronizer,
+                            didOutput collection: AVCaptureSynchronizedDataCollection) {
+    guard let syncedDepth = collection.synchronizedData(for: depthOutput) as? AVCaptureSynchronizedDepthData,
+          let syncedVideo = collection.synchronizedData(for: videoOutput) as? AVCaptureSynchronizedSampleBufferData
+    else { return }
+    let depthMap = syncedDepth.depthData.depthDataMap  // CVPixelBuffer，每像素距离（米）
+    let videoBuffer = syncedVideo.sampleBuffer.imageBuffer!
+}
+```
+
+### Camera Control（iPhone 16 硬件按钮）
+```swift
+// 系统预设控件
+let zoomSlider = AVCaptureSystemZoomSlider(device: device) { zoomFactor in
+    let displayZoom = device.displayVideoZoomFactorMultiplier * zoomFactor
+}
+let biasSlider = AVCaptureSystemExposureBiasSlider(device: device)
+
+// 自定义控件
+let focusSlider = AVCaptureSlider("Focus", symbolName: "scope", in: 0...1)
+focusSlider.setActionQueue(sessionQueue) { lensPosition in
+    try? device.lockForConfiguration()
+    device.setFocusModeLocked(lensPosition: lensPosition)
+    device.unlockForConfiguration()
+}
+
+let filterPicker = AVCaptureIndexPicker("Filters", symbolName: "camera.filters",
+    localizedIndexTitles: filters.map(\.localizedTitle))
+
+// 添加到 Capture Session
+guard captureSession.supportsControls else { return }
+captureSession.beginConfiguration()
+for control in [zoomSlider, biasSlider, focusSlider, filterPicker] {
+    if captureSession.canAddControl(control) { captureSession.addControl(control) }
+}
+captureSession.commitConfiguration()
+
+// 代理响应控件激活
+extension CaptureService: AVCaptureSessionControlsDelegate {
+    func sessionControlsDidBecomeActive(_ session: AVCaptureSession) { }
+    func sessionControlsWillEnterFullscreenAppearance(_ session: AVCaptureSession) { /* 隐藏 UI */ }
+    func sessionControlsWillExitFullscreenAppearance(_ session: AVCaptureSession) { /* 恢复 UI */ }
+    func sessionControlsDidBecomeInactive(_ session: AVCaptureSession) { }
+}
+```
+
+### Smart Framing（iPhone 17，智能构图）
+```swift
+// 查找支持 Smart Framing 的设备
+let session = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInUltraWideCamera], mediaType: .video, position: .front)
+guard let device = session.devices.first,
+      let format = device.formats.first(where: \.isSmartFramingSupported) else { return }
+try device.lockForConfiguration()
+device.activeFormat = format
+device.unlockForConfiguration()
+
+// 配置并启动监控
+guard let monitor = device.smartFramingMonitor else { return }
+monitor.enabledFramings = monitor.supportedFramings
+
+framingObservation = monitor.observe(\.recommendedFraming, options: [.new]) { monitor, _ in
+    guard let framing = monitor.recommendedFraming else { return }
+    Task { await applyFraming(framing) }
+}
+try monitor.startMonitoring()
+
+// 应用推荐构图（先设宽高比，再设缩放）
+func applyFraming(_ framing: AVCaptureFraming) async {
+    try? device.lockForConfiguration()
+    try? await device.setDynamicAspectRatio(framing.aspectRatio)
+    device.videoZoomFactor = CGFloat(framing.zoomFactor)
+    device.unlockForConfiguration()
+}
+```
+
+### 空间 / 3D 视频（MV-HEVC）
+```swift
+// 检查立体视频轨道
+let track = try await asset.loadTracks(withMediaCharacteristic: .containsStereoMultiviewVideo).first
+
+// 读取 MV-HEVC 的左右眼图像
+let output = AVAssetReaderTrackOutput(track: track!, outputSettings: nil)
+reader.add(output)
+reader.startReading()
+while let sampleBuffer = output.copyNextSampleBuffer() {
+    guard let taggedBuffers = sampleBuffer.taggedBuffers else { continue }
+    for taggedBuffer in taggedBuffers {
+        if case .pixelBuffer(let buffer) = taggedBuffer.buffer {
+            if taggedBuffer.tags.contains(.stereoView(.leftEye)) { /* 左眼 */ }
+            if taggedBuffer.tags.contains(.stereoView(.rightEye)) { /* 右眼 */ }
+        }
+    }
+}
+
+// Side-by-Side → MV-HEVC 转码
+let compressionProps: [CFString: Any] = [
+    kVTCompressionPropertyKey_MVHEVCVideoLayerIDs: [0, 1],
+    kVTCompressionPropertyKey_MVHEVCViewIDs: [0, 1],
+    kVTCompressionPropertyKey_MVHEVCLeftAndRightViewIDs: [0, 1],
+    kVTCompressionPropertyKey_HasLeftStereoEyeView: true,
+    kVTCompressionPropertyKey_HasRightStereoEyeView: true
+]
+let outputSettings: [String: Any] = [
+    AVVideoCodecKey: AVVideoCodecType.hevc,
+    AVVideoWidthKey: eyeWidth, AVVideoHeightKey: eyeHeight,
+    AVVideoCompressionPropertiesKey: compressionProps
+]
+let writerInput = AVAssetWriterInput(mediaType: .video, outputSettings: outputSettings)
+let adaptor = AVAssetWriterInputTaggedPixelBufferGroupAdaptor(assetWriterInput: writerInput)
+
+// 使用 VTPixelTransferSession 裁切左右眼并写入
+let leftTags: [CMTag] = [.videoLayerID(0), .stereoView(.leftEye)]
+let rightTags: [CMTag] = [.videoLayerID(1), .stereoView(.rightEye)]
+let taggedBuffers = [CMTaggedBuffer(tags: leftTags, buffer: .pixelBuffer(leftBuffer)),
+                     CMTaggedBuffer(tags: rightTags, buffer: .pixelBuffer(rightBuffer))]
+adaptor.appendTaggedBuffers(taggedBuffers, withPresentationTime: pts)
 ```
 
 ### 文字转语音
@@ -3094,6 +3388,243 @@ arView.session.captureHighResolutionFrame { frame, error in
 }
 ```
 
+
+## HLS 流媒体与离线下载
+```swift
+// 创建后台下载会话
+let config = URLSessionConfiguration.background(withIdentifier: "com.app.hlsDownload")
+let downloadSession = AVAssetDownloadURLSession(configuration: config, assetDownloadDelegate: self, delegateQueue: .main)
+
+// 配置并启动下载任务
+let asset = AVURLAsset(url: hlsURL)
+let downloadConfig = AVAssetDownloadConfiguration(asset: asset, title: "My Video")
+let qualifier = AVAssetVariantQualifier(predicate: NSPredicate(format: "peakBitRate > 265000"))
+downloadConfig.primaryContentConfiguration.variantQualifiers = [qualifier]
+let task = downloadSession.makeAssetDownloadTask(downloadConfiguration: downloadConfig)
+task.resume()
+
+// 监控下载进度
+let observation = task.progress.observe(\.fractionCompleted) { progress, _ in
+    print("Downloaded: \(progress.fractionCompleted * 100)%")
+}
+
+// 取消下载
+task.cancel()
+
+// 删除已下载内容
+try FileManager.default.removeItem(at: localAssetURL)
+
+// 播放已下载内容
+let localAsset = AVURLAsset(url: localAssetURL)
+let playerItem = AVPlayerItem(asset: localAsset)
+player.replaceCurrentItem(with: playerItem)
+```
+
+## 视频导出与缩略图生成
+```swift
+// 视频格式转换（AVAssetExportSession）
+guard await AVAssetExportSession.compatibility(ofExportPreset: AVAssetExportPresetHEVCHighestQuality,
+    with: asset, outputFileType: .mov) else { return }
+let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHEVCHighestQuality)!
+exportSession.outputFileType = .mov
+exportSession.outputURL = outputURL
+await exportSession.export()
+
+// 缩略图生成（AVAssetImageGenerator）
+let generator = AVAssetImageGenerator(asset: asset)
+generator.maximumSize = CGSize(width: 300, height: 0)  // 限制尺寸
+generator.requestedTimeToleranceBefore = .zero
+generator.requestedTimeToleranceAfter = CMTime(seconds: 2, preferredTimescale: 600)
+
+// 单张
+let (image, actualTime) = try await generator.image(at: .zero)
+
+// 批量（异步序列）
+let times: [CMTime] = [.zero, CMTime(seconds: 10, preferredTimescale: 600)]
+for await result in generator.images(for: times) {
+    switch result {
+    case .success(_, let image, _): processImage(image)
+    case .failure(_, let error): print(error)
+    }
+}
+
+// 异步加载媒体属性（Swift 6 推荐方式）
+let (duration, metadata) = try await asset.load(.duration, .metadata)
+let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+```
+
+## 协调播放（SharePlay / GroupActivities）
+```swift
+import GroupActivities
+
+// 定义 Group Activity
+struct MovieWatchingActivity: GroupActivity {
+    let movie: Movie  // Codable
+    var metadata: GroupActivityMetadata {
+        var meta = GroupActivityMetadata()
+        meta.type = .watchTogether
+        meta.title = movie.title
+        return meta
+    }
+}
+
+// 发起共享
+let activity = MovieWatchingActivity(movie: selectedMovie)
+switch await activity.prepareForActivation() {
+case .activationPreferred: _ = try await activity.activate()
+case .activationDisabled: playLocally(selectedMovie)
+case .cancelled: break
+default: break
+}
+
+// 监听 Group Session
+for await groupSession in MovieWatchingActivity.sessions() {
+    groupSession.join()
+    // 连接播放协调器
+    player.playbackCoordinator.coordinateWithSession(groupSession)
+    // 监听活动变化（其他参与者切换内容）
+    for await activity in groupSession.$activity.values {
+        enqueue(activity.movie)
+    }
+}
+
+// 自定义播放暂停（不影响其他参与者）
+extension AVCoordinatedPlaybackSuspension.Reason {
+    static var whatHappened = Self(rawValue: "com.app.whatHappened")
+}
+let suspension = player.playbackCoordinator.beginSuspension(for: .whatHappened)
+player.seek(to: player.currentTime() - CMTime(value: 10, timescale: 1))
+player.rate = 2.0
+DispatchQueue.main.asyncAfter(deadline: .now() + 10) { suspension.end() }
+```
+
+## 媒体元数据与字幕选择
+```swift
+// 加载元数据
+for format in try await asset.load(.availableMetadataFormats) {
+    let metadata = try await asset.loadMetadata(for: format)
+    let titleItems = AVMetadataItem.metadataItems(from: metadata, filteredByIdentifier: .commonIdentifierTitle)
+    let title = titleItems.first?.stringValue
+}
+
+// 字幕 / 音轨选择
+for characteristic in try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions) {
+    if let group = try await asset.loadMediaSelectionGroup(for: characteristic) {
+        for option in group.options { print("\(option.displayName)") }
+        // 选择西班牙语字幕
+        let locale = Locale(identifier: "es-ES")
+        if let option = AVMediaSelectionGroup.mediaSelectionOptions(from: group.options, with: locale).first {
+            playerItem.select(option, in: group)
+        }
+    }
+}
+
+// 章节标记
+let languages = Locale.preferredLanguages
+let chapters = try await asset.loadChapterMetadataGroups(bestMatchingPreferredLanguages: languages)
+for chapter in chapters {
+    let title = AVMetadataItem.metadataItems(from: chapter.items, filteredByIdentifier: .commonIdentifierTitle).first?.stringValue
+    let timeRange = chapter.timeRange  // 章节时间范围
+}
+```
+
+## 视频色彩管理
+```swift
+// 写入时指定色彩空间（HD Rec. 709）
+let colorProps = [
+    AVVideoColorPrimariesKey: AVVideoColorPrimaries_ITU_R_709_2,
+    AVVideoYCbCrMatrixKey: AVVideoYCbCrMatrix_ITU_R_709_2,
+    AVVideoTransferFunctionKey: AVVideoTransferFunction_ITU_R_709_2
+]
+let outputSettings: [String: Any] = [
+    AVVideoCodecKey: AVVideoCodecType.h264,
+    AVVideoWidthKey: 1920, AVVideoHeightKey: 1080,
+    AVVideoColorPropertiesKey: colorProps
+]
+
+// 视频合成色彩空间
+let videoComposition = AVMutableVideoComposition()
+videoComposition.colorPrimaries = AVVideoColorPrimaries_P3_D65        // P3 宽色域
+videoComposition.colorTransferFunction = AVVideoTransferFunction_ITU_R_709_2
+videoComposition.colorYCbCrMatrix = AVVideoYCbCrMatrix_ITU_R_709_2
+
+// 检测宽色域视频
+let wideGamutTracks = try await asset.loadTracks(withMediaCharacteristic: .usesWideGamutColorSpace)
+if !wideGamutTracks.isEmpty { /* 使用宽色域处理 */ }
+
+// 像素缓冲区色彩标记
+CVBufferSetAttachment(pixelBuffer, kCVImageBufferColorPrimariesKey, kCVImageBufferColorPrimaries_P3_D65, .shouldPropagate)
+CVBufferSetAttachment(pixelBuffer, kCVImageBufferTransferFunctionKey, kCVImageBufferTransferFunction_ITU_R_709_2, .shouldPropagate)
+```
+
+## 相机滤镜（Core Image / Metal GPU 渲染）
+```swift
+// 方式 1：Core Image 滤镜（简单，自动 GPU 加速）
+let ciContext = CIContext()
+let rosyFilter = CIFilter(name: "CIColorMatrix")!
+rosyFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputGVector")  // 移除绿色
+
+func applyFilter(to sampleBuffer: CMSampleBuffer) -> CIImage? {
+    guard let pixelBuffer = sampleBuffer.imageBuffer else { return nil }
+    let input = CIImage(cvPixelBuffer: pixelBuffer)
+    rosyFilter.setValue(input, forKey: kCIInputImageKey)
+    return rosyFilter.outputImage
+}
+
+// 方式 2：Metal Compute Shader（更灵活，完全 GPU 控制）
+// RosyEffect.metal:
+// kernel void rosyEffect(texture2d<half, access::read> input [[texture(0)]],
+//                        texture2d<half, access::write> output [[texture(1)]],
+//                        uint2 gid [[thread_position_in_grid]]) {
+//     half4 color = input.read(gid);
+//     output.write(half4(color.r, 0.0, color.b, 1.0), gid);  // 移除绿色
+// }
+
+// 深度 → 灰度可视化（LiDAR / TrueDepth）
+func depthToGrayscale(depthBuffer: CVPixelBuffer, cutoff: Float) {
+    CVPixelBufferLockBaseAddress(depthBuffer, [])
+    let width = CVPixelBufferGetWidth(depthBuffer)
+    let height = CVPixelBufferGetHeight(depthBuffer)
+    for y in 0..<height {
+        let row = CVPixelBufferGetBaseAddress(depthBuffer)! + y * CVPixelBufferGetBytesPerRow(depthBuffer)
+        let data = UnsafeMutableBufferPointer<Float32>(start: row.assumingMemoryBound(to: Float32.self), count: width)
+        for x in 0..<width {
+            data[x] = (data[x] > 0 && data[x] <= cutoff) ? 1.0 : 0.0  // 前景 1，背景 0
+        }
+    }
+    CVPixelBufferUnlockBaseAddress(depthBuffer, [])
+}
+
+// 背景替换（CIBlendWithMask）
+let alphaMatte = depthMaskImage.clampedToExtent()
+    .applyingFilter("CIGaussianBlur", parameters: ["inputRadius": 5])
+    .applyingFilter("CIGammaAdjust", parameters: ["inputPower": 0.5])
+    .cropped(to: depthMaskImage.extent)
+let output = videoImage.applyingFilter("CIBlendWithMask",
+    parameters: ["inputMaskImage": alphaMatte, "inputBackgroundImage": backgroundImage])
+```
+
+## 音频会话配置（AirPlay / 后台播放）
+```swift
+// 配置音频会话（播放 App 必须）
+let session = AVAudioSession.sharedInstance()
+try session.setCategory(.playback, mode: .moviePlayback)  // 电影播放
+try session.setActive(true)
+// 需要 Background Modes → Audio, AirPlay, and Picture in Picture
+
+// AirPlay 配置
+try session.setCategory(.playback, mode: .default, policy: .longFormAudio)
+// 使用 AVRoutePickerView 或 RoutePickerButton 展示 AirPlay 设备选择器
+
+// Continuity Camera（iPhone 作为 Mac 摄像头）
+let discoverySession = AVCaptureDevice.DiscoverySession(
+    deviceTypes: [.builtInWideAngleCamera, .externalUnknown],  // .externalUnknown 发现 iPhone
+    mediaType: .video, position: .unspecified)
+// 自动相机选择
+let preferredDevice = AVCaptureDevice.systemPreferredCamera
+// 用户偏好持久化
+AVCaptureDevice.userPreferredCamera = selectedDevice
+```
 
 ## AVAudioEngine + AVAudioSession（音频处理）
 ```swift
@@ -5377,6 +5908,16 @@ extensionContext.getSignInWithAppleUpgradeAuthorization(state: myState, nonce: m
 43. **FocusFilter**：`SetFocusFilterIntent` 的 `appContext` 控制通知过滤谓词；实体需实现 `suggestedEntities()`
 44. **后台下载**：`URLSessionConfiguration.background` 的任务在 App 终止后仍继续；必须在 AppDelegate 保存 `completionHandler`
 45. **Security Key**：仅支持 `.ES256` 算法；注册和断言使用不同的 Provider 方法
+46. **AVPlayer Observation**：`isObservationEnabled` 必须在创建任何播放器之前设置且不可更改；适合通用状态但不适合时间观察（用 `addPeriodicTimeObserver`）
+47. **Camera Control**：`canAddControl` 可能因达到 `maxControlCount` 返回 false；控件的 `value` 需要与 App 其他 UI 同步更新
+48. **Smart Framing**：仅前置 Ultra Wide 摄像头支持；先设 `aspectRatio` 再设 `zoomFactor` 确保平滑过渡
+49. **MV-HEVC**：必须设置 `rndr` track association 否则播放器忽略 display mask；左右眼 layer ID 必须一致（0=左，1=右）
+50. **LiDAR 深度流**：`AVCaptureDataOutputSynchronizer` 第一个 output 是主输出；`smoothedSceneDepth` 比 `sceneDepth` 噪声更低
+51. **Live Photo**：必须先启用 `isLivePhotoCaptureEnabled` 再拍摄；保存用 `PHAssetCreationRequest` 配对 `.photo` + `.pairedVideo`
+52. **ProRAW**：启用 `isAppleProRAWEnabled` 应在启动 session 之前；`fileDataRepresentation()` 返回 DNG 格式
+53. **HLS 离线下载**：只能下载 VOD 流，不能下载直播流；`AVAssetDownloadConfiguration` 需配置 `primaryContentConfiguration`
+54. **SharePlay 协调播放**：必须先 `join()` session 再 `coordinateWithSession`；自定义暂停结束后协调器自动恢复原始速率
+55. **视频色彩**：未标记的视频默认按 SD 色彩空间处理；`AVVideoColorPropertiesKey` 写入时源和目标色彩不同会自动转换
 
 ## 崩溃报告分析与符号化
 ```swift
