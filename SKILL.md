@@ -5441,6 +5441,56 @@ NavigationSplitView {
 // 用最新 SDK 编译但保留旧版视觉风格
 ```
 
+### UIKit UIGlassEffect
+```swift
+import UIKit
+
+// UIKit 自定义视图添加 Liquid Glass
+class MyCustomView: UIView {
+    private func setupGlassEffect() {
+        let glassEffect = UIGlassEffect()
+        let glassView = UIVisualEffectView(effect: glassEffect)
+        glassView.frame = bounds
+        glassView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        insertSubview(glassView, at: 0)
+    }
+}
+
+// 系统组件自动获得 Liquid Glass（无需代码）：
+// UITabBar, UINavigationBar, UIToolbar, UIAlertController, Sheets, Modal
+// 重编译后自动适配
+```
+
+### Liquid Glass 可访问性适配
+```swift
+// 检测 Reduce Transparency 设置，提供 fallback
+struct AccessibleGlassView: View {
+    @Environment(\.accessibilityReduceTransparency) var reduceTransparency
+    @Environment(\.colorSchemeContrast) var contrast
+
+    var body: some View {
+        Text("Content")
+            .padding()
+            .background {
+                if reduceTransparency {
+                    RoundedRectangle(cornerRadius: 12).fill(.regularMaterial)  // 不透明 fallback
+                } else {
+                    RoundedRectangle(cornerRadius: 12).glassEffect(.regular)  // Liquid Glass
+                }
+            }
+    }
+}
+
+// ✅ 必须测试的辅助功能设置：
+// Settings → Accessibility → Display → Reduce Transparency
+// Settings → Accessibility → Display → Reduce Motion
+// Settings → Accessibility → Display → Increase Contrast
+
+// ❌ 避免：Liquid Glass 背景上叠加浅色文字（对比度不足）
+// ❌ 避免：不用 GlassEffectContainer 包裹多个 glass 元素
+// ✅ iOS 26 之前用 .background(.ultraThinMaterial) 作为 fallback
+```
+
 ## SwiftUI 性能优化（Xcode 26 Instruments，WWDC25）
 ```swift
 // Xcode 26 SwiftUI Performance Instrument 使用步骤：
@@ -6142,6 +6192,49 @@ struct AnimalEditor: View {
 }
 ```
 
+### SwiftData + CloudKit 同步调试
+```bash
+# Xcode Scheme → Arguments Passed On Launch 添加：
+-com.apple.CoreData.CloudKitDebug 1
+-com.apple.CoreData.Logging.stderr 1
+-com.apple.CoreData.SQLDebug 1
+-com.apple.CoreData.MigrationDebug 1
+```
+```swift
+import CoreData
+
+// 监听 CloudKit 同步事件
+NotificationCenter.default.addObserver(
+    forName: NSPersistentCloudKitContainer.eventChangedNotification,
+    object: nil, queue: .main
+) { notification in
+    guard let event = notification.userInfo?[
+        NSPersistentCloudKitContainer.eventNotificationUserInfoKey
+    ] as? NSPersistentCloudKitContainer.Event else { return }
+    switch event.type {
+    case .setup:  print("CloudKit setup: \(event.succeeded)")
+    case .import: print("CloudKit import: \(event.succeeded)")
+    case .export: print("CloudKit export: \(event.succeeded)")
+    @unknown default: break
+    }
+    if let error = event.error { print("Sync error: \(error)") }
+}
+
+// Schema 变更规则（生产环境）：
+// ✅ 只能新增 Optional 属性
+// ❌ 不能删除/重命名/修改类型/加密字段
+// SwiftData 自动处理轻量迁移
+
+// 调试 Checklist：
+// □ iCloud 容器 ID 在 Capabilities 中正确配置
+// □ 真机测试（模拟器 CloudKit 同步不可靠）
+// □ Schema 变更后在 CloudKit Dashboard 重置开发环境
+// □ 测试飞行模式 → 恢复网络的同步行为
+// □ 验证多设备同步（iPhone + iPad/Mac 同时操作）
+// □ 检查 CloudKit Dashboard 记录类型与 Model 一致
+// □ App Sandbox 包含 com.apple.security.network.client
+```
+
 ## Vision 进阶（轨迹检测 / 图像分类 / 3D 姿态 / 实例分割 / 目标追踪）
 
 ### 轨迹检测（实时视频帧）
@@ -6557,6 +6650,10 @@ extensionContext.getSignInWithAppleUpgradeAuthorization(state: myState, nonce: m
 69. **SwiftData CloudKit 初始化**：`initializeCloudKitSchema()` 仅在 DEBUG 模式运行；初始化后必须卸载 store 再创建 ModelContainer
 70. **SwiftData Autosave**：编辑表单用 @State 暂存值，Save 时才写入 Model，防止 autosave 提前保存未完成编辑
 71. **Liquid Glass 背景延伸**：`backgroundExtensionEffect` 仅延伸模糊图片，不影响内容交互区域；需配合 safe area 使用
+72. **UIKit UIGlassEffect**：通过 `UIVisualEffectView(effect: UIGlassEffect())` 添加；系统组件（UITabBar/UINavigationBar 等）重编译后自动适配
+73. **Liquid Glass 可访问性**：必须检测 `accessibilityReduceTransparency`，开启时用 `.regularMaterial` 替代 glass；测试 Reduce Motion 和 Increase Contrast
+74. **CloudKit 同步调试**：启动参数 `-com.apple.CoreData.CloudKitDebug 1` 查看详细日志；监听 `eventChangedNotification` 检测 setup/import/export 状态
+75. **CloudKit Schema 生产**：推到生产后只能新增 Optional 属性；模拟器同步不可靠，必须真机测试；变更后需在 Dashboard 重置开发环境
 
 ## 崩溃报告分析与符号化
 ```swift
