@@ -5156,6 +5156,100 @@ func verifyText(_ text: String) -> Bool { !denyList.contains(where: text.contain
 // 4. 收集用户反馈：session.transcript → JSON → Feedback Assistant
 ```
 
+## Foundation Models — Instruments 性能分析
+```swift
+// Instruments → Blank → 添加 "Foundation Models" instrument
+// 时间线显示：Asset Loading / Token Usage / Tool Calling / Session 延迟
+
+// 关键优化 1：prewarm with promptPrefix（减少首 token 延迟）
+var session = LanguageModelSession()
+session.prewarm()                                          // 基础预热
+session.prewarm(promptPrefix: "Generate a travel itinerary for")  // 带前缀预热
+
+// 关键优化 2：includeSchemaInPrompt = false（减少 token 消耗）
+// 首次请求保留 schema（质量更好），后续请求关闭（省数百 token）
+let response = try await session.streamResponse(
+    prompt: prompt,
+    generable: MyCustomType.self,
+    options: .init(includeSchemaInPrompt: false)  // 后续请求关闭
+)
+
+// Token 成本：单词 ≈ 1 token，符号/数字（如电话号码）可能 10+ tokens
+// 超过 1000 tokens 会显著减慢响应，特别是旧设备
+// Instruments → Inference detail area 查看每个 session 的 token 详情
+```
+
+## Foundation Models — Prompting 最佳实践
+```swift
+// === 角色 / 人设（Role / Persona）===
+// 用 "you are" 赋予角色，"expert" 增加权威性
+let instructions = """
+    You are a senior software engineer expert in Swift.
+    You are mentoring junior developers with patience and clarity.
+    """
+
+// === 多语言支持 ===
+// 检查语言支持
+if SystemLanguageModel.default.supportsLocale() {
+    // 当前 App 语言受支持
+}
+// 获取所有支持的语言列表
+let supported = SystemLanguageModel.default.supportedLanguages
+
+// 设置输出语言（指令中明确指定）
+let session = LanguageModelSession(instructions: """
+    The person's locale is \(Locale.current.identifier).
+    You MUST respond in Italian.
+    """)
+
+// === Few-Shot 提示（提供 2-15 个简短示例）===
+let prompt = """
+    Create an NPC. Examples:
+    {name: "Thimblefoot", desc: "A horse with rainbow mane", order: "Something sweet"}
+    {name: "Spiderkid", desc: "A furry spider with baseball cap", order: "Iced coffee"}
+    """
+let npc = try await session.respond(to: prompt, generating: NPC.self).content
+
+// === 推理字段（Reasoning Field）===
+// 将推理步骤作为第一个属性，让模型先思考再回答
+@Generable
+struct ReasonableAnswer {
+    var reasoningSteps: String           // 第一个属性：推理过程
+    @Guide(description: "The answer only.")
+    var answer: MyCustomType             // 最终答案
+}
+
+// === 条件提示 → Swift switch 替代 if-else ===
+// ❌ 避免：在 prompt 中写 IF/ELSE 条件
+// ✅ 推荐：用 Swift switch 定制 prompt，减少模型困惑
+var customGreeting = ""
+switch role {
+case .bard: customGreeting = "This guest is a bard. Ask about music."
+case .soldier: customGreeting = "This guest is a soldier. Ask about danger."
+default: customGreeting = "This guest is a weary traveler."
+}
+let instructions = "You are a friendly innkeeper. \(customGreeting)"
+
+// === Prompt 版本管理 ===
+// 模型随 OS 更新，prompt 需要版本化
+if #available(iOS 26.4, macOS 26.4, *) {
+    return String(localized: "summarizer-v1.1", table: "Prompts")
+} else {
+    return String(localized: "summarizer-v1.0", table: "Prompts")
+}
+// 或用 Xcode String Catalogs 管理所有 prompt
+// 或用服务器下发 prompt（最灵活，支持 A/B 测试和快速回滚）
+
+// === Guardrail 违规时的用户提示 ===
+do {
+    let response = try await session.respond(to: userInput)
+} catch LanguageModelSession.GenerationError.guardrailViolation {
+    showMessage("Sorry, this feature isn't designed to handle that kind of input.")
+} catch LanguageModelSession.GenerationError.unsupportedLanguage {
+    showMessage("This language isn't supported by Apple Intelligence.")
+}
+```
+
 ## AVPlayer + Observation 框架（iOS 26，WWDC25）
 ```swift
 import AVFoundation
@@ -5295,6 +5389,56 @@ ScrollView { content }
 // - Action Sheet 从触发控件位置弹出（非底部边缘）
 // - 避免在 Liquid Glass 元素上叠加自定义背景
 // - 使用 .toolbarBackground(.hidden) 移除自定义工具栏背景
+```
+
+## Liquid Glass 进阶采用（Window / Navigation / 背景延伸）
+```swift
+// 背景延伸效果（图片延伸到 sidebar/inspector 下方，模糊处理）
+Image("hero")
+    .resizable()
+    .aspectRatio(contentMode: .fill)
+    .backgroundExtensionEffect(
+        BackgroundExtensionEffect(edges: [.leading, .trailing])
+    )
+
+// 水平 ScrollView 延伸到 sidebar 下方
+ScrollView(.horizontal) {
+    LazyHStack { ForEach(items) { item in ItemCard(item: item) } }
+}
+.scrollClipDisabled()  // 允许内容滚动到 sidebar 下方
+
+// Tab Bar 滚动时自动收起（iOS 26）
+TabView {
+    Tab("Home", systemImage: "house") { HomeView() }
+    Tab("Search", systemImage: "magnifyingglass") { SearchView() }
+}
+.tabBarMinimizeBehavior(.onScrollDown)  // 下滑收起，反向展开
+
+// Toolbar 分组（相关操作共享 Liquid Glass 背景）
+.toolbar {
+    ToolbarItemGroup(placement: .primaryAction) {
+        Button("Share", systemImage: "square.and.arrow.up") { }
+        Button("Favorite", systemImage: "heart") { }
+    }
+    ToolbarItem(placement: .primaryAction) {
+        Spacer()  // 固定间距分隔不同分组
+    }
+    ToolbarItemGroup(placement: .primaryAction) {
+        Button("Settings", systemImage: "gear") { }
+    }
+}
+
+// iPadOS 窗口连续调整大小（自动 reflow）
+// 使用标准 NavigationSplitView API，系统自动提供流畅过渡动画
+NavigationSplitView {
+    SidebarView()
+} detail: {
+    DetailView()
+}
+
+// 保持旧版外观（Info.plist 添加此 key）
+// UIDesignRequiresCompatibility = true
+// 用最新 SDK 编译但保留旧版视觉风格
 ```
 
 ## SwiftUI 性能优化（Xcode 26 Instruments，WWDC25）
@@ -5897,6 +6041,107 @@ init(searchText: String, sortParam: SortParameter, sortOrder: SortOrder) {
 }
 ```
 
+## SwiftData + CloudKit 完整同步指南
+
+### 必需 Capabilities
+```
+// 1. Signing & Capabilities → iCloud → 启用 CloudKit → 选择/创建 Container
+// 2. Signing & Capabilities → Background Modes → 启用 "Remote notifications"
+//    （系统静默推送通知 SwiftData 有新变更需同步）
+```
+
+### Schema 兼容性规则
+```swift
+// CloudKit 限制：
+// - @Attribute(.unique)   → CloudKit 不强制唯一约束（并发同步无法保证）
+// - @Relationship          → 必须 optional（iCloud 不保证原子处理关系变更）
+// - deleteRule: .cascade  → 不支持（框架不立即同步变更）
+// - 必须显式设置 inverse   → CloudKit 处理顺序不确定
+// - Schema 推到生产后只能新增，不能删除类型或修改属性
+
+@Model class Trip {
+    var name: String
+    var destination: String
+    @Relationship(inverse: \BucketListItem.trip)  // 必须显式设 inverse
+    var bucketList: [BucketListItem]? = []         // 必须 optional
+}
+```
+
+### Schema 初始化（开发阶段，仅 DEBUG）
+```swift
+let config = ModelConfiguration()
+#if DEBUG
+try autoreleasepool {
+    let desc = NSPersistentStoreDescription(url: config.url)
+    desc.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+        containerIdentifier: "iCloud.com.example.Trips")
+    desc.shouldAddStoreAsynchronously = false  // 同步加载，确保完成后再初始化
+    if let mom = NSManagedObjectModel.makeManagedObjectModel(for: [Trip.self, Accommodation.self]) {
+        let container = NSPersistentCloudKitContainer(name: "Trips", managedObjectModel: mom)
+        container.persistentStoreDescriptions = [desc]
+        container.loadPersistentStores { _, err in if let err { fatalError(err.localizedDescription) } }
+        try container.initializeCloudKitSchema()  // 初始化 CloudKit schema
+        if let store = container.persistentStoreCoordinator.persistentStores.first {
+            try container.persistentStoreCoordinator.remove(store)  // 卸载，避免与 SwiftData 冲突
+        }
+    }
+}
+#endif
+modelContainer = try ModelContainer(for: Trip.self, Accommodation.self, configurations: config)
+```
+
+### ModelConfiguration 选项
+```swift
+// 指定 CloudKit 容器（多容器时必须指定）
+let config = ModelConfiguration(cloudKitDatabase: .private("iCloud.com.example.Trips"))
+
+// 禁用自动同步（App 已有 CloudKit 使用，避免冲突）
+let config = ModelConfiguration(cloudKitDatabase: .none)
+```
+
+### 服务器数据本地缓存模式（Upsert）
+```swift
+// @Attribute(.unique) + modelContext.insert() = 自动 upsert
+// 如果 code 已存在 → 更新其他字段；不存在 → 插入新记录
+@Model class Quake {
+    @Attribute(.unique) var code: String  // 服务器唯一标识
+    var magnitude: Double
+    var time: Date
+    var location: Location               // Codable struct 可直接嵌入
+}
+
+// 下载后批量 upsert
+for feature in featureCollection.features {
+    let quake = Quake(from: feature)
+    if quake.magnitude > 0 { modelContext.insert(quake) }
+}
+// autosave 自动处理 insert + update，无需手动调用 save()
+```
+
+### Autosave 行为
+```swift
+// 默认 autosave = true：ModelContext 定期检查并保存未提交变更
+// 手动 save：modelContext.save()（立即保存，不等待 autosave）
+// 编辑表单模式：用 @State 变量暂存编辑值，点击 Save 时才写入 Model
+// 这样 autosave 不会提前保存未完成的编辑
+
+// 编辑器模式示例：
+struct AnimalEditor: View {
+    let animal: Animal?  // nil = 新建，非 nil = 编辑
+    @State private var name = ""
+    @State private var selectedDiet = Animal.Diet.herbivorous
+
+    private func save() {
+        if let animal {
+            animal.name = name; animal.diet = selectedDiet  // autosave 自动保存
+        } else {
+            let new = Animal(name: name, diet: selectedDiet)
+            modelContext.insert(new)  // autosave 自动保存
+        }
+    }
+}
+```
+
 ## Vision 进阶（轨迹检测 / 图像分类 / 3D 姿态 / 实例分割 / 目标追踪）
 
 ### 轨迹检测（实时视频帧）
@@ -6305,6 +6550,13 @@ extensionContext.getSignInWithAppleUpgradeAuthorization(state: myState, nonce: m
 62. **性能测试**：Test Plan 应设 Release + 关闭 Debug executable + 关闭 Coverage/Sanitizer；`Set Baseline` 后自动检测回归
 63. **Code Coverage**：收集影响性能但不影响相对对比；skipped test 不计入覆盖率
 64. **StoreKit 测试**：本地配置文件的收据不能用于生产环境；Synced 配置不可编辑，需转换为 Local 才能修改
+65. **Foundation Models Token**：`includeSchemaInPrompt: false` 可省数百 token，但首次请求建议保留以提升质量
+66. **Foundation Models Prompt**：条件逻辑用 Swift `switch` 而非 prompt 中的 IF-ELSE；`prewarm(promptPrefix:)` 比空 `prewarm()` 更快
+67. **Foundation Models 多语言**：`supportsLocale()` 检查支持后再调用；不支持的语言 guardrails 可能失效
+68. **SwiftData CloudKit**：Relationship 必须 optional + 显式设 inverse；Schema 推生产后只能新增不能删改
+69. **SwiftData CloudKit 初始化**：`initializeCloudKitSchema()` 仅在 DEBUG 模式运行；初始化后必须卸载 store 再创建 ModelContainer
+70. **SwiftData Autosave**：编辑表单用 @State 暂存值，Save 时才写入 Model，防止 autosave 提前保存未完成编辑
+71. **Liquid Glass 背景延伸**：`backgroundExtensionEffect` 仅延伸模糊图片，不影响内容交互区域；需配合 safe area 使用
 
 ## 崩溃报告分析与符号化
 ```swift
