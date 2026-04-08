@@ -3836,6 +3836,384 @@ struct MyAppClip: App {
 // 需要在 apple-app-site-association 中配置 appclips 字段
 ```
 
+## Xcode 调试（Debugging 完整指南）
+
+### Runtime Sanitizers（运行时检测工具）
+```
+Scheme → Edit Scheme → Run/Test → Diagnostics 中开启：
+
+Address Sanitizer (ASan)    → 检测内存越界、use-after-free、栈溢出
+  -fsanitize=address (clang) / -sanitize=address (swiftc)
+  内存 2-3x，速度 2-5x 减慢；不检测泄漏和未初始化内存
+
+Thread Sanitizer (TSan)     → 检测数据竞争、未初始化锁、线程泄漏
+  -fsanitize=thread (clang) / -sanitize=thread (swiftc)
+  仅 Simulator + 64 位 macOS；内存 5-10x，速度 2-20x 减慢
+
+Main Thread Checker         → 检测非主线程调用 UI API（默认开启）
+  性能影响极小（CPU 1-2%），启动增加 <100ms
+  修复：DispatchQueue.main.async { self.label.text = "..." }
+
+Undefined Behavior (UBSan)  → 除零、对齐错误、NULL 解引用、整数溢出
+  -fsanitize=undefined (clang)
+  仅 C 系语言；平均 20% CPU 开销
+```
+
+### 断点（Breakpoints）
+```swift
+// 条件断点：Control-click 断点 → Edit Breakpoint
+// Condition: item.count > 100     // 仅满足条件时暂停
+// Ignore: 50                       // 忽略前 50 次命中
+
+// 符号断点（Breakpoint Navigator → + → Symbolic Breakpoint）
+// Symbol: UIViewAlertForUnsatisfiableConstraints
+// 用于定位 Auto Layout 问题：po [[UIWindow keyWindow] _autolayoutTrace]
+
+// Swift Error 断点：捕获 throw 位置而非 try! 崩溃位置
+// Breakpoint Navigator → + → Swift Error Breakpoint
+
+// Objective-C Exception 断点：捕获 NSException 真正抛出位置
+// Breakpoint Navigator → + → Exception Breakpoint
+
+// Runtime Issue 断点：配合 Sanitizer 使用
+// Breakpoint Navigator → + → Runtime Issue Breakpoint
+
+// 断点动作（不暂停，仅记录）
+// Edit Breakpoint → Add Action → Debugger Command → po myVariable
+// 勾选 "Automatically continue after evaluating actions"
+// 或 Add Action → Sound → 确认代码执行路径而不暂停
+```
+
+### LLDB 调试命令
+```
+// 打印变量（不编译表达式，最快）
+(lldb) v self.fruitList.title         // frame variable 别名
+(lldb) v self.listData[0]
+
+// 编译表达式（支持函数调用、计算属性）
+(lldb) p self.fruitList.calculatedCount    // expression 别名
+(lldb) p fruit.fruitName == "Peach"        // 返回 Bool
+(lldb) p $R2 + ", " + $R6                  // 引用之前结果
+
+// 对象描述（自定义输出）
+(lldb) po fruitList                        // 调用 debugDescription
+(lldb) po cell                             // UIView 详情
+
+// 修改变量值（调试中临时修改）
+(lldb) po fruitList.title = "Tasty Fruit"
+
+// 协议类型变量用 v（p/po 不支持迭代类型解析）
+(lldb) v fruitItem.fruitName               // 正确
+// (lldb) po fruitItem.fruitName           // 报错
+```
+
+### 内存图调试（Memory Graph）
+```
+1. 运行 App → 点击 Debug Bar 的 "Debug Memory Graph" 按钮
+2. 左侧 Debug Navigator 显示类型列表和实例（nodes）
+3. 选择 node → 查看内存引用图，高亮强引用
+4. Control-click node → Focus on Node / Quick Look / Print Description
+
+// 诊断 Retain Cycle：
+// - 观察 Memory gauge，导航时内存只增不减
+// - Memory Graph 中找到双向强引用
+// - 将一方改为 weak 或移除依赖
+
+// 诊断 Abandoned Memory：
+// - App 不再需要但仍有引用的对象
+// - 在合适的生命周期时机移除引用
+```
+
+### View Debugger（界面调试）
+```
+1. 点击 Debug Bar 的 "Debug View Hierarchy" 按钮
+2. 拖拽查看 3D 分层视图
+3. 选择 view → Inspector 查看属性和约束
+
+// visionOS 可视化调试
+// Debug Visualizations 按钮：
+//   Anchoring   → 锚点
+//   Axes        → 坐标轴
+//   Bounds      → 包围盒
+//   Collision Shapes → 碰撞形状（对所有 Shared Space 实体生效）
+//   Occlusion Mesh   → 遮挡网格
+//   Surfaces         → 检测到的表面
+
+// 环境覆盖（Environmental Overrides）
+// Debug Bar → Environment Overrides：
+//   Interface Style（Light/Dark）
+//   Dynamic Type Size
+//   Accessibility 选项
+```
+
+## Xcode 性能分析（Performance 完整指南）
+
+### 启动时间优化
+```swift
+// 启动类型：
+// Cold Launch  → 重启后/内存被回收后，最慢
+// Warm Launch  → 杀掉进程后重新打开
+// Resume       → 从后台恢复，最快
+
+// Xcode Organizer → Launches 查看启动时间分析
+// MetricKit → MXAppLaunchDiagnostic 提供启动时间直方图
+
+// 减少启动时间的关键：
+// 1. 减少第三方 Framework 数量（dyld 加载开销）
+// 2. 避免 +load 方法和 __attribute__((constructor))
+// 3. 延迟非必要初始化到首次使用时
+// 4. 仅加载首屏必要数据
+// 5. 简化首屏视图层级
+// 6. 使用 Mergeable Libraries（Xcode 15+）减少动态库加载
+
+// Instruments → App Launch 模板分析：
+// - dyld Activity: 静态初始化耗时
+// - App Life Cycle: 进程初始化 / UIKit 初始化 / 首帧渲染
+// - Time Profiler: CPU 热点
+
+// 追踪自定义启动活动
+let poiLog = OSLog(subsystem: "com.app.myapp", category: .pointsOfInterest)
+os_signpost(.begin, log: poiLog, name: "Startup Activities")
+// 准备视图数据...
+os_signpost(.end, log: poiLog, name: "Startup Activities")
+```
+
+### 内存优化
+```
+// Xcode Organizer → Memory：峰值内存 + 挂起时内存
+// MetricKit → MXMemoryMetric
+
+// 内存超限 → EXC_RESOURCE (MEMORY subtype) 警告
+// 继续超限 → Jetsam 终止（用户看到 App 消失）
+
+// 关键概念：
+// - 分配内存 ≠ 使用内存（Clean vs Dirty）
+// - 只有写入后的内存页（16KB/页）才计入使用量
+// - 单字节写入 = 16KB 页分配
+
+// Instruments → Allocations + Leaks 模板
+// Debug Memory Graph 按钮 → 查看 retain cycle
+```
+
+### 响应性优化（Hitches & Hangs）
+```
+// Hitch = 帧未及时准备好，滚动/动画卡顿
+//   绿色 < 5 ms/s | 黄色 5-10 ms/s | 红色 > 10 ms/s
+// Hang = 主线程无响应 > 250ms，严重时 > 1s
+
+// Xcode Organizer：
+// - Scrolling 面板 → Hitch Rate（仅 iOS/iPadOS）
+// - Hang Rate 面板 → 秒/小时
+// - Hang Reports → 堆栈跟踪 + 函数级别归因
+
+// MetricKit → MXAppResponsivenessMetric
+
+// Instruments → Time Profiler 模板：
+// - Thread State Trace 查看阻塞原因
+// - SwiftUI instrument 查看 View Body Updates
+
+// iOS 设备端 Hang Detection：
+// Settings → Developer → Hang Detection → 实时通知
+```
+
+### 磁盘写入优化
+```
+// Xcode Organizer → Disk Writes：MB/天
+// Disk Writes Reports → 超阈值异常报告 + 堆栈
+
+// 关键规则：
+// 1. 频繁小变更用 SwiftData/CoreData/SQLite，不要用序列化文件
+// 2. 避免反复 open/save/close 同一文件
+// 3. 避免不必要的 fsync / F_FULLFSYNC（用 F_BARRIERFSYNC）
+// 4. 原子写入会产生额外写入（临时文件+重命名），仅在需要时使用
+// 5. 批量创建/删除文件会产生大量元数据写入（iOS 每文件 8KB）
+
+// SQLite 最佳实践：
+// - 使用 WAL 模式：PRAGMA journal_mode=WAL
+// - 使用事务批量操作：BEGIN TRANSACTION ... COMMIT
+// - 用 incremental_vacuum 替代 VACUUM
+// - 保持连接打开，避免频繁 open/close
+// - 使用合适的索引（EXPLAIN QUERY PLAN 分析）
+
+// Instruments → File Activity 模板
+// XCTest 性能测试：
+func testDiskUse() {
+    measure(metrics: [XCTStorageMetric()]) {
+        // 写入操作
+    }
+}
+```
+
+### HTTP 流量分析
+```
+// Instruments → Network 模板 → HTTP Traffic instrument
+// 注意：会记录加密和未加密流量！
+
+// 命名 URLSession 便于 Instruments 识别：
+let session = URLSession(configuration: .default)
+session.sessionDescription = "Main Session"
+
+// HTTP Traffic 层级：
+// Process → Session → Domain → Task → Transaction
+// Transaction 五阶段：cache lookup → blocked → sending → waiting → receiving
+
+// Points of Interest → 自动标记访问可能追踪用户的域名
+// 如果发现追踪域名 → 在 Privacy Manifest 中声明或移除相关代码
+```
+
+### Smart Insights（Xcode Organizer 智能洞察）
+```
+// Xcode Organizer 自动检测性能回归：
+// - 对比最近 5 个版本的趋势
+// - 火焰图标 = 最大回归的报告
+// - 支持 Disk Writes / Hang Rate / Launch Time
+
+// 回归通知：
+// Organizer → Notifications 按钮 → 开启
+// 条件：最新版本比前 4 版平均值回归 ≥75%
+// 频率：每 24 小时最多 1 次/App
+
+// 推荐值：
+// Xcode 26 起显示启动时间推荐值（虚线）
+// 基于同类 App 和历史数据计算
+```
+
+## Xcode 测试完整指南
+
+### 运行测试
+```bash
+# 运行所有测试
+xcodebuild test -scheme SampleApp
+
+# 运行单个测试函数
+xcodebuild test -scheme SampleApp \
+  -only-testing SampleAppTests/SampleAppTests/testEmptyArray
+
+# 运行测试套件
+xcodebuild test -scheme SampleApp \
+  -only-testing SampleAppTests/SampleAppTests
+
+# 重复运行直到失败（flaky test 检测）
+xcodebuild test -scheme SampleApp \
+  -only-testing SampleAppTests/SampleAppTests/testEmptyArray \
+  -run-tests-until-failure -test-iterations 20
+
+# 指定模拟器
+xcodebuild test -scheme SampleApp \
+  -destination "platform=iOS Simulator,name=iPhone 16"
+```
+
+### 代码覆盖率（Code Coverage）
+```
+// 开启：Test Plan → Configurations → Code Coverage → "Gather coverage for"
+// 测试后查看：Report Navigator → 选择 Test action → Coverage 面板
+// Source Editor 右侧显示每行执行次数
+// 红色高亮 = 未覆盖代码
+
+// 注意：
+// - 覆盖率收集影响性能（线性影响，不影响对比）
+// - Skipped test 不计入覆盖率
+// - 高覆盖率 ≠ 高质量测试，需配合断言
+```
+
+### 性能测试（XCTest）
+```swift
+// 默认测量执行时间
+func testSortPerformance() {
+    measure {
+        _ = largeArray.sorted()
+    }
+}
+
+// 自定义指标
+func testMemoryUse() {
+    measure(metrics: [XCTMemoryMetric(), XCTClockMetric()]) {
+        processData()
+    }
+}
+
+// 磁盘写入测量
+func testDiskUse() {
+    measure(metrics: [XCTStorageMetric()]) {
+        saveLargeFile()
+    }
+}
+
+// 设置 Baseline：点击 gutter 图标 → Set Baseline
+// Max STDDEV：允许的最大标准偏差
+// 超过 baseline + STDDEV → 测试失败
+
+// 性能测试配置（Test Plan）：
+// - Build Configuration: Release
+// - Debug executable: OFF
+// - Code Coverage: OFF
+// - Sanitizers: OFF
+```
+
+### StoreKit 测试（本地内购测试）
+```
+// 1. File → New → StoreKit Configuration File
+// 2. 添加产品（消耗品/非消耗品/自动续期订阅）
+// 3. Scheme → Edit Scheme → Run → Options → StoreKit Configuration
+// 4. 选择配置文件 → 运行 App 即可测试内购流程
+
+// Synced 配置：从 App Store Connect 同步产品数据
+// Local 配置：手动定义产品（无需 ASC）
+
+// 本地收据验证：
+// Editor → Save Public Certificate → 添加到项目
+#if DEBUG
+let certificate = "StoreKitTestCertificate"
+#else
+let certificate = "AppleIncRootCertificate"
+#endif
+```
+
+### 位置模拟（测试 CoreLocation）
+```swift
+// Test Plan → Configuration → Simulated Location → 选择位置
+// 或添加 GPX 文件模拟路线
+
+// UI 测试中模拟位置
+func testLocationFeature() throws {
+    XCUIDevice.shared.location = XCUILocation(
+        location: CLLocation(latitude: 37.334886, longitude: -122.008988))
+    // 启动 App 并测试
+}
+
+// 单元测试中直接构造 CLLocation
+let testLocation = CLLocation(latitude: 37.7749, longitude: -122.4194)
+myLocationHandler.process(testLocation)
+```
+
+### 测试策略（金字塔模型）
+```
+       ┌──────────┐
+       │  UI 测试  │  ← 少量，验证完整用户流程
+       │ (XCUITest)│
+      ─┼──────────┼─
+      │ 集成测试   │  ← 中量，验证组件间连接
+      │(Integration)│
+     ─┼────────────┼─
+     │   单元测试    │  ← 大量，快速验证逻辑
+     │(Swift Testing)│
+     └──────────────┘
+
+// 可测试性改进：
+// 1. 依赖协议化：将具体类型替换为 protocol，测试时用 Stub
+// 2. 参数化依赖：singleton → init 参数，测试时注入替代实现
+// 3. Metatype 注入：需要创建对象时，用类型变量替代硬编码类型
+// 4. 子类覆盖：覆盖 untestable 方法（如系统时钟），测试可控
+
+// 示例：依赖协议化
+protocol URLOpener { func open(_ file: URL) -> Bool }
+extension OpaqueService: URLOpener {}  // 生产代码
+class StubService: URLOpener {          // 测试代码
+    var isSuccessful = true
+    func open(_ file: URL) -> Bool { isSuccessful }
+}
+```
+
 ## Xcode 开发者工具速查
 
 ### 崩溃报告分析
@@ -5918,6 +6296,15 @@ extensionContext.getSignInWithAppleUpgradeAuthorization(state: myState, nonce: m
 53. **HLS 离线下载**：只能下载 VOD 流，不能下载直播流；`AVAssetDownloadConfiguration` 需配置 `primaryContentConfiguration`
 54. **SharePlay 协调播放**：必须先 `join()` session 再 `coordinateWithSession`；自定义暂停结束后协调器自动恢复原始速率
 55. **视频色彩**：未标记的视频默认按 SD 色彩空间处理；`AVVideoColorPropertiesKey` 写入时源和目标色彩不同会自动转换
+56. **Address Sanitizer**：不检测内存泄漏和未初始化内存；内存 2-3x 增加，`-O1` 可改善
+57. **Thread Sanitizer**：仅 Simulator + 64 位 macOS，不支持真机；内存 5-10x，避免在性能测试中使用
+58. **Main Thread Checker**：默认开启，影响极小；修复方式是 `DispatchQueue.main.async { }`
+59. **Memory Graph**：调试时暂停 App 才能捕获；retain cycle 需找到双向强引用并改一方为 `weak`
+60. **启动时间**：Cold/Warm/Resume 是连续谱系，测试需覆盖多种场景；减少第三方 Framework 数量是最有效手段
+61. **Hang Detection**：Organizer 报告 > 1s 的 hang；iOS 设备端可开启实时检测（Settings → Developer）
+62. **性能测试**：Test Plan 应设 Release + 关闭 Debug executable + 关闭 Coverage/Sanitizer；`Set Baseline` 后自动检测回归
+63. **Code Coverage**：收集影响性能但不影响相对对比；skipped test 不计入覆盖率
+64. **StoreKit 测试**：本地配置文件的收据不能用于生产环境；Synced 配置不可编辑，需转换为 Local 才能修改
 
 ## 崩溃报告分析与符号化
 ```swift
