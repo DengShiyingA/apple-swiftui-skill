@@ -6578,6 +6578,266 @@ extensionContext.getSignInWithAppleUpgradeAuthorization(state: myState, nonce: m
 }
 ```
 
+## watchOS 开发（Extended Runtime + 后台执行）
+
+### Extended Runtime Sessions
+```swift
+import WatchKit
+
+// 启用：WatchKit Extension → Background Modes → 选择 session 类型
+// 每个 App 只能支持一种 Extended Runtime Session 类型
+
+let session = WKExtendedRuntimeSession()
+session.delegate = self
+session.start()  // 必须在 .active 状态时启动
+
+// Smart Alarm 可预约（其他类型立即启动）
+session.start(at: scheduledDate)  // 最多提前 36 小时
+
+// 结束
+session.invalidate()
+
+// Delegate
+func extendedRuntimeSessionDidStart(_ session: WKExtendedRuntimeSession) { }
+func extendedRuntimeSessionWillExpire(_ session: WKExtendedRuntimeSession) {
+    // 清理工作，即将到期
+}
+func extendedRuntimeSession(_ session: WKExtendedRuntimeSession,
+    didInvalidateWith reason: WKExtendedRuntimeSessionInvalidationReason, error: Error?) { }
+```
+
+**Session 类型对比**：
+| 类型 | 运行位置 | 可预约 | 时间限制 |
+|------|---------|--------|---------|
+| Self Care | 前台 | 否 | 10 分钟 |
+| Mindfulness | 前台 | 否 | 1 小时 |
+| Physical Therapy | 后台 | 否 | 1 小时 |
+| Smart Alarm | 后台 | 是（36h内）| 30 分钟 |
+
+### 后台执行模式
+```swift
+// watchOS 后台任务（BackgroundTask modifier）
+@main struct MyWatchApp: App {
+    var body: some Scene {
+        WindowGroup { ContentView() }
+            .backgroundTask(.appRefresh("refresh")) {
+                await refreshContent()
+            }
+    }
+}
+
+// 持续后台会话（需对应 Background Mode）：
+// - HKWorkoutSession     → 运动追踪
+// - AVAudioSession        → 音频播放
+// - CLBackgroundActivitySession → 位置更新
+
+// 注意：ClockKit 已在 watchOS 10 废弃
+// 迁移到 WidgetKit 创建表盘复杂功能
+// 有活跃 Complication 的 App 会获得更多后台刷新机会
+```
+
+## tvOS 开发（Focus Engine + Game Controller）
+```swift
+// === Focus Engine ===
+// tvOS 所有交互基于焦点系统（Siri Remote 遥控器）
+// SwiftUI 自动支持焦点；UIKit 用标准 focus API
+
+// 自定义焦点外观（tvOS Liquid Glass 自动适用于标准控件）
+Button("Play") { startPlayback() }
+    .focusable()
+    .focused($isFocused)
+
+// === Game Controller ===
+import GameController
+
+// 检测已连接的控制器
+NotificationCenter.default.addObserver(forName: .GCControllerDidConnect, object: nil, queue: .main) { note in
+    guard let controller = note.object as? GCController else { return }
+    if let gamepad = controller.extendedGamepad {
+        gamepad.buttonA.pressedChangedHandler = { _, _, pressed in
+            if pressed { jump() }
+        }
+        gamepad.leftThumbstick.valueChangedHandler = { _, xValue, yValue in
+            movePlayer(x: xValue, y: yValue)
+        }
+    }
+}
+
+// Siri Remote 作为 micro gamepad
+if let remote = GCController.current?.microGamepad {
+    remote.dpad.valueChangedHandler = { _, xValue, yValue in
+        navigate(x: xValue, y: yValue)
+    }
+}
+```
+
+## visionOS 进阶（3D 内容 / Room Tracking / 隐私）
+
+### Windows vs Volumes vs Immersive Spaces
+```swift
+// Window（2D 为主 + 深度效果）
+WindowGroup { ContentView() }
+
+// Volume（3D 内容，固定缩放，物理单位）
+WindowGroup(id: "globe") { Globe() }
+    .windowStyle(.volumetric)
+    .defaultSize(width: 1, height: 1, depth: 1, in: .meters)  // 1 立方米
+
+// Immersive Space（无限空间，控制放置位置）
+ImmersiveSpace(id: "solar") { SolarSystemView() }
+    .immersionStyle(selection: $style, in: .mixed, .full)
+// .mixed = 与现实共存  .full = 完全沉浸（隐藏其他 App）
+
+// 打开沉浸式空间
+@Environment(\.openImmersiveSpace) var openImmersiveSpace
+Button("Enter") {
+    Task { let result = await openImmersiveSpace(id: "solar") }
+}
+// 注意：同一时间只能有一个 Immersive Space
+```
+
+### Room Tracking
+```swift
+import ARKit
+
+let session = ARKitSession()
+let roomTracking = RoomTrackingProvider()
+try await session.run([roomTracking])
+
+for await update in roomTracking.anchorUpdates {
+    let roomAnchor = update.anchor
+    switch update.event {
+    case .added, .updated:
+        if roomAnchor.isCurrentRoom {
+            // 当前房间 → 更新内容
+            let mesh = roomAnchor.geometry.asMeshResource()
+        }
+    case .removed:
+        // 房间不再有效
+        break
+    }
+}
+// Info.plist: NSWorldSensingUsageDescription 必须设置
+```
+
+### visionOS 隐私
+```swift
+// 系统自动处理眼睛/手部追踪用于交互，App 无需获取原始数据
+// 仅在确实需要时请求 ARKit 数据（如手部位置绑定 3D 内容）
+let auth = await ARKitSession().queryAuthorization(for: [.worldSensing, .handTracking])
+guard auth[.worldSensing] != .denied else { return }
+
+// 必需 Info.plist keys：
+// NSWorldSensingUsageDescription  → 世界追踪
+// NSHandTrackingUsageDescription  → 手部追踪
+// 其他隐私 key 同 iOS（CoreLocation 等）
+```
+
+## App Store Connect API
+```swift
+// === JWT Token 生成（ES256）===
+// Header: { "alg": "ES256", "kid": "<Key ID>", "typ": "JWT" }
+// Payload（Team Key）:
+// {
+//   "iss": "<Issuer ID>",           // Users and Access → Integrations
+//   "iat": 1528407600,              // UNIX 时间戳
+//   "exp": 1528408800,              // 最长 20 分钟（部分 GET 可 6 个月）
+//   "aud": "appstoreconnect-v1",
+//   "scope": ["GET /v1/apps?filter[platform]=IOS"]  // 可选，限制请求范围
+// }
+// 用私钥签名后在请求中使用：
+// Authorization: Bearer <signed-token>
+
+// API Key 类型：
+// Team Key   → 访问所有 App，需 Admin 创建
+// Individual → 绑定用户权限和 App 范围
+
+// 私钥只能下载一次，Apple 不保存副本！
+
+// === 常用 API ===
+// GET  /v1/apps                        → 获取 App 列表
+// POST /v1/subscriptionGroups          → 创建订阅组
+// POST /v1/subscriptionGroupLocalizations → 添加订阅组本地化
+// GET  /v1/salesReports                → 销售报告
+// GET  /v1/financeReports              → 财务报告
+
+// TestFlight 自动化：
+// 邀请测试员、管理构建版本、创建公开链接、提交外部测试审核
+```
+
+## App 发布分发流程
+```
+1. Product → Archive（选择 scheme + 目标设备类型）
+2. Window → Organizer → 选择 Archive → Validate App
+3. Distribute App → 选择分发方式：
+   - TestFlight（内/外部测试）
+   - App Store（正式发布）
+   - Ad Hoc（注册设备，有设备数限制）
+   - Developer ID（macOS 公证分发，非 App Store）
+   - Enterprise（企业内部分发）
+
+4. 代码签名：Automatically manage signing（推荐）或手动
+5. dSYM 管理：
+   - Build Settings → Debug Information Format → DWARF with dSYM File
+   - 上传到 App Store Connect 时包含 Symbols
+   - 保留每个分发版本的 Xcode Archive（dSYM 需匹配 build UUID）
+
+// Mac Catalyst：iPad 和 Mac 版本需分别 Archive
+// Xcode 15+：模拟器目标也可 Archive
+```
+
+## APNs HTTP/2 推送请求格式
+```
+// 连接：api.push.apple.com:443 (生产) / api.sandbox.push.apple.com:443 (开发)
+// 也可用 port 2197
+
+POST /3/device/<device_token>
+
+// 必需 Headers：
+:method        = POST
+:path          = /3/device/<hex_device_token>
+apns-topic     = com.example.MyApp           // Bundle ID
+apns-push-type = alert                        // alert/background/voip/complication 等
+
+// 可选 Headers：
+authorization   = bearer <JWT>                // Token 认证
+apns-id         = <UUID>                      // 唯一通知 ID
+apns-expiration = 0                           // 0=仅尝试一次，非0=存储重试
+apns-priority   = 10                          // 10=立即, 5=省电, 1=最省电
+apns-collapse-id = <string max 64bytes>       // 合并通知
+
+// Body（JSON，最大 4KB，VoIP 5KB）
+{ "aps": { "alert": { "title": "Hello", "body": "World" }, "sound": "default" } }
+
+// 最佳实践：
+// - 每次连接前 DNS 查询（分散负载到所有服务器）
+// - 复用连接（数小时~数天），空闲 1h 后发 HTTP/2 PING
+// - HPACK 压缩：:path 和 authorization 用 literal without indexing
+// - 创建唯一 apns-id 便于调试
+```
+
+### 本地通知调度
+```swift
+// 日历触发（每周二 14:00）
+var dateComponents = DateComponents()
+dateComponents.weekday = 3; dateComponents.hour = 14
+let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+
+// 时间间隔触发（60 秒后）
+let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 60, repeats: false)
+
+// 位置触发
+let region = CLCircularRegion(center: coord, radius: 200, identifier: "office")
+region.notifyOnEntry = true
+let trigger = UNLocationNotificationTrigger(region: region, repeats: false)
+
+let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+try await UNUserNotificationCenter.current().add(request)
+
+// 取消通知
+UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+```
+
 ## 常见坑点（2026 完整版）
 1. **Liquid Glass**：多个 `.glassEffect()` 必须包在 `GlassEffectContainer` 中，否则性能严重下降
 2. **Foundation Models**：必须 `prewarm()` + 用 `contextSize/tokenCount` 动态管理上下文
@@ -6654,6 +6914,14 @@ extensionContext.getSignInWithAppleUpgradeAuthorization(state: myState, nonce: m
 73. **Liquid Glass 可访问性**：必须检测 `accessibilityReduceTransparency`，开启时用 `.regularMaterial` 替代 glass；测试 Reduce Motion 和 Increase Contrast
 74. **CloudKit 同步调试**：启动参数 `-com.apple.CoreData.CloudKitDebug 1` 查看详细日志；监听 `eventChangedNotification` 检测 setup/import/export 状态
 75. **CloudKit Schema 生产**：推到生产后只能新增 Optional 属性；模拟器同步不可靠，必须真机测试；变更后需在 Dashboard 重置开发环境
+76. **watchOS Extended Runtime**：CPU 持续高负载会导致系统取消 session；Smart Alarm 必须在会话期间播放 haptic，否则系统警告并可能禁用未来会话
+77. **tvOS Focus Engine**：所有交互基于焦点系统；自定义控件必须实现 focus API 才能被 Siri Remote 操作
+78. **visionOS 隐私**：眼睛/手部追踪用于交互由系统处理，App 不需获取原始数据；仅在需要手部位置绑定内容时才请求 `handTracking` 授权
+79. **visionOS Immersive Space**：同一时间只能显示一个；`.mixed` 样式不要填满屏幕（阻挡真实环境有安全风险）；`.full` 隐藏其他 App
+80. **App Store Connect JWT**：最长 20 分钟有效期（部分安全 GET 可 6 个月）；私钥只能下载一次，Apple 不保存副本
+81. **dSYM 管理**：Build Settings 必须设为 DWARF with dSYM File；dSYM 和 binary 通过 build UUID 配对，版本不同则不匹配
+82. **APNs HTTP/2**：HPACK 压缩必须正确使用（:path 用 literal without indexing）；JSON payload 最大 4KB（VoIP 5KB）
+83. **本地通知**：`UNCalendarNotificationTrigger` 用 DateComponents 不是 Date；取消通知用 `removePendingNotificationRequests(withIdentifiers:)`
 
 ## 崩溃报告分析与符号化
 ```swift
