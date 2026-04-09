@@ -89,6 +89,13 @@ cp /path/to/apple-swiftui-skill/SKILL.md .github/copilot-instructions.md
 
 如果 AI 能准确回答（包含 `GlassEffectContainer`、`@Namespace` 等细节），说明已生效。
 
+## 使用建议
+
+- 先让 AI 读取 `SKILL.md` 顶部的“快速导航”，再进入具体章节，命中率会比直接全文件扫描更高。
+- 提问时优先带上英文 API 名、平台、目标和约束，例如 `SwiftUI + StoreKit 2 订阅页`、`visionOS Room Tracking 权限处理`、`Foundation Models 流式输出 UI`。
+- 如果是排错，直接给错误信息、相关代码和期望行为；这个 skill 更适合处理具体场景，不适合泛泛地问“怎么做 iOS App”。
+- 如果是架构问题，明确你在做的是列表页、支付流、AI 聊天、同步、推送还是多平台适配，这样 AI 更容易跳到对应章节。
+
 ## 更新
 
 ```bash

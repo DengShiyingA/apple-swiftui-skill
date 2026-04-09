@@ -26,6 +26,11 @@ if ! grep -q '^## 快速导航$' "$skill_file"; then
   exit 1
 fi
 
+if ! grep -q '^## 使用建议$' "$readme_file"; then
+  echo "README.md should explain how to use the skill effectively"
+  exit 1
+fi
+
 missing_paths=()
 
 while IFS= read -r path; do
