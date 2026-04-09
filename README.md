@@ -17,7 +17,7 @@ git clone https://github.com/DengShiyingA/apple-swiftui-skill.git
 **第 2 步**：复制 `SKILL.md` 到你的 iOS 项目根目录
 
 ```bash
-cp apple-swiftui-skill/SKILL.md ~/Projects/MyiOSApp/
+cp /path/to/apple-swiftui-skill/SKILL.md ~/Projects/MyiOSApp/
 ```
 
 完成。Claude Code 打开项目时会自动加载 `SKILL.md`。
@@ -33,7 +33,7 @@ cp apple-swiftui-skill/SKILL.md ~/Projects/MyiOSApp/
 ```bash
 cd ~/Projects/MyiOSApp
 mkdir -p .cursor/rules
-cp ~/apple-swiftui-skill/SKILL.md .cursor/rules/
+cp /path/to/apple-swiftui-skill/SKILL.md .cursor/rules/
 ```
 
 完成。Cursor 会自动加载 `.cursor/rules/` 下的所有文件。
@@ -49,7 +49,7 @@ cp ~/apple-swiftui-skill/SKILL.md .cursor/rules/
 ```bash
 cd ~/Projects/MyiOSApp
 mkdir -p .windsurf/rules
-cp ~/apple-swiftui-skill/SKILL.md .windsurf/rules/
+cp /path/to/apple-swiftui-skill/SKILL.md .windsurf/rules/
 ```
 
 完成。Windsurf 会自动加载。
@@ -65,7 +65,7 @@ cp ~/apple-swiftui-skill/SKILL.md .windsurf/rules/
 ```bash
 cd ~/Projects/MyiOSApp
 mkdir -p .github
-cp ~/apple-swiftui-skill/SKILL.md .github/copilot-instructions.md
+cp /path/to/apple-swiftui-skill/SKILL.md .github/copilot-instructions.md
 ```
 
 完成。Copilot 会自动读取这个文件。
@@ -92,10 +92,20 @@ cp ~/apple-swiftui-skill/SKILL.md .github/copilot-instructions.md
 ## 更新
 
 ```bash
-cd apple-swiftui-skill && git pull
+cd /path/to/apple-swiftui-skill && git pull
 ```
 
 然后重新复制 `SKILL.md` 到你的项目。
+
+## 仓库自检
+
+```bash
+./scripts/validate-skill-repo.sh
+```
+
+这个脚本会检查：
+- `SKILL.md` 的 frontmatter 描述是否符合技能发现规则
+- `README.md` 中声明的仓库结构是否与实际文件一致
 
 ## 覆盖内容
 
@@ -121,7 +131,8 @@ cd apple-swiftui-skill && git pull
 ```
 ├── SKILL.md           # 主知识库（7,600+ 行）← 只需要这个文件
 ├── README.md          # 本文件
-└── apple_skills/      # 39 个框架详细参考（可选，需要深入某框架时查阅）
+└── scripts/
+   └── validate-skill-repo.sh   # 仓库说明与 skill 元数据校验
 ```
 
 ## License
