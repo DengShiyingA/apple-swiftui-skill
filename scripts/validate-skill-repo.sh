@@ -21,6 +21,11 @@ if [[ "$normalized_description" != Use\ when* ]]; then
   exit 1
 fi
 
+if ! grep -q '^## 快速导航$' "$skill_file"; then
+  echo "SKILL.md should include a quick navigation section near the top"
+  exit 1
+fi
+
 missing_paths=()
 
 while IFS= read -r path; do

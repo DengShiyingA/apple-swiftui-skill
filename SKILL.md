@@ -8,6 +8,16 @@ description: >
 
 专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。覆盖 SwiftUI、Apple Intelligence、Liquid Glass、SwiftData、WidgetKit、App Intents、HealthKit、CloudKit、RealityKit、Apple Pay、AVFoundation、CoreML、Vision、ARKit、CoreImage、EventKit、Contacts、Passkeys、BackgroundTasks、SpriteKit、CreateML、DocumentGroup、Layout 协议、Accessibility、Localization、Combine、Network Framework、CoreLocation 高级、CoreData、Authentication Services、watchOS、tvOS、visionOS、App Store Connect API 等 **45+ 框架**，100+ 章节，1000+ 代码示例。
 
+## 快速导航
+- **先看这里**：Liquid Glass、SwiftUI 基础、Observation、SwiftData、Foundation Models、App Intents、WidgetKit、导航、测试、性能优化
+- **做产品功能**：StoreKit 2、Push Notifications、Apple Pay、Sign in with Apple、Passkeys、Deep Link / Universal Links、App 发布必备、统一错误处理、分页 / 无限滚动、图片缓存策略
+- **做系统能力**：HealthKit、CloudKit、CoreLocation + MapKit、BackgroundTasks、Contacts、EventKit、CoreBluetooth、Network Framework
+- **做媒体 / AI / 视觉**：AVFoundation、CoreML + Vision、Vision 文档表格识别、Foundation Models 安全与高级用法、Writing Tools 集成、CoreImage、ReplayKit
+- **做 AR / 空间计算**：ARKit、RealityKit、visionOS 进阶、Room Tracking、场景重建、PhotogrammetrySession、RealityKit 粒子 / 着色器
+- **做多平台 / 工具链**：watchOS 开发、tvOS 开发、macOS 菜单命令、多窗口 + 状态恢复、Xcode 调试、Xcode 性能分析、Xcode Cloud、App Store Connect API
+- **需要速查时**：常用修饰符速查、常用控件速查、其他常用框架速查、SwiftUI 修饰符补全、Xcode 开发者工具速查、常见坑点
+- **检索建议**：优先搜索英文 API 名或章节标题，如 `LanguageModelSession`、`glassEffectUnion`、`AppIntent`、`StoreKit 2`、`NWConnection`、`Room Tracking`、`统一错误处理`
+
 ## 平台快照
 | 项目 | 值 |
 |------|-----|
