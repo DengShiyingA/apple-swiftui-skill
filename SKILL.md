@@ -4836,6 +4836,130 @@ let emailRegex = Regex {
 }
 ```
 
+### Swift 6 严格并发迁移指南
+```swift
+// === 迁移步骤 ===
+// 1. Build Settings → Strict Concurrency Checking → Complete
+// 2. 逐步修复编译错误（不要一次性全改）
+// 3. 确认无数据竞争后 → Swift Language Version → 6
+
+// === 常见修复模式 ===
+// ❌ 非 Sendable class 跨 actor 传递 → 编译错误
+// ✅ 方案 1：改为 actor
+// ✅ 方案 2：改为 struct（值类型自动 Sendable）
+// ✅ 方案 3：@unchecked Sendable（你自己保证线程安全）
+class MyService: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _data: [String] = []
+    func getData() -> [String] { lock.withLock { _data } }
+}
+
+// === nonisolated 提升性能 ===
+actor DataStore {
+    var items: [Item] = []
+    nonisolated var description: String { "DataStore" }  // 不需要 await
+    nonisolated let id = UUID()  // 不可变数据也可以 nonisolated
+}
+
+// === Task 继承规则 ===
+@MainActor func updateUI() {
+    Task { /* 继承 @MainActor */ }
+    Task.detached { /* 脱离 MainActor，UI 更新需 await MainActor.run { } */ }
+}
+```
+
+### SwiftUI 性能进阶（Equatable View + 精准更新）
+```swift
+// 1. Equatable View 避免不必要重绘
+struct ItemRow: View, Equatable {
+    let item: Item
+    var body: some View { Text(item.title) }
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.item.id == rhs.item.id && lhs.item.title == rhs.item.title
+    }
+}
+
+// 2. 精准 id 防止 List 复用错误
+List(items) { item in ItemRow(item: item).id(item.id) }
+
+// 3. 复杂视图合并绘制
+LazyVStack { ForEach(items) { ... } }
+    .drawingGroup()  // Metal 加速，减少 GPU 调用
+
+// 4. 动画精准绑定（而非全局 animation）
+withAnimation(.easeInOut) { isExpanded.toggle() }
+// 或 .animation(.easeInOut, value: isExpanded)
+
+// 5. 性能排查 Checklist：
+// □ Instruments → SwiftUI 模板 → View Body Updates
+// □ body 中无昂贵计算（移到 ViewModel 缓存）
+// □ 大列表用 LazyVStack + 分页 + 图片异步
+// □ .task(id:) 在 id 变化时自动 cancel 旧 Task
+// □ 避免闭包捕获 self（导致任何属性变化都触发重算）
+// □ @StateObject → @State + @Observable（iOS 17+）
+```
+
+### 架构选型指南
+```
+// === 何时用什么架构 ===
+// 小型 App（1-3 人）→ MVVM + @Observable，无需额外框架
+// 中型 App（3-8 人）→ MVVM + Repository + UseCase + DI 容器
+// 大型 App（8+ 人）  → Feature Modules + Clean Architecture
+
+// === Feature Module 目录结构 ===
+// MyApp/
+// ├─ Core/          # 共享基础设施（Network, DI, Extensions）
+// ├─ Features/      # 按功能模块拆分
+// │   ├─ Home/
+// │   │   ├─ HomeView.swift
+// │   │   ├─ HomeViewModel.swift
+// │   │   └─ HomeRepository.swift
+// │   └─ Profile/
+// ├─ Domain/        # 业务模型 + UseCase
+// └─ Data/          # SwiftData @Model + Network 实现
+
+// === TCA (The Composable Architecture) ===
+// 适用场景：非常复杂的状态流、大团队、需要时间旅行调试
+// 不适用：简单 App（过度工程化）、性能敏感场景（额外抽象层开销）
+// 2026 推荐：大多数 App 用 MVVM + Repository + Observation 即可
+```
+
+### CI/CD 实践（GitHub Actions + Xcode Cloud）
+```yaml
+# .github/workflows/ios.yml — GitHub Actions 基础模板
+name: iOS CI
+on: [push, pull_request]
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app
+      - name: Build
+        run: xcodebuild build -scheme MyApp -destination 'platform=iOS Simulator,name=iPhone 16'
+      - name: Test
+        run: xcodebuild test -scheme MyApp -destination 'platform=iOS Simulator,name=iPhone 16'
+```
+```swift
+// 多环境配置（Debug / Staging / Release）
+#if DEBUG
+let baseURL = URL(string: "https://dev.api.example.com")!
+let logLevel: LogLevel = .debug
+#elseif STAGING
+let baseURL = URL(string: "https://staging.api.example.com")!
+let logLevel: LogLevel = .info
+#else
+let baseURL = URL(string: "https://api.example.com")!
+let logLevel: LogLevel = .error
+#endif
+
+// Build Settings → Active Compilation Conditions:
+// Debug:   DEBUG
+// Staging: STAGING
+// Release: (空)
+```
+
 ## LocalAuthentication（Face ID / Touch ID）
 ```swift
 import LocalAuthentication
@@ -7421,6 +7545,11 @@ extension EnvironmentValues {
 88. **CachedAsyncImage**：`.task(id: url)` 确保 URL 变化时重新加载；`applicationDidReceiveMemoryWarning` 中清空内存和 URLCache
 89. **深度链接路由**：冷启动时用 `pendingRoute` 暂存，在根 View 的 `.task` 中处理；`onOpenURL` 仅在 App 已运行时触发
 90. **统一错误处理**：`isRetryable` 区分可重试错误；typed throws `throws(AppError)` 需 Swift 6+；`errorAlert` modifier 全局使用避免每个 View 重复处理
+91. **Swift 6 迁移**：先设 Strict Concurrency Checking → Complete 逐步修复，确认无错后再切 Language Version → 6；非 Sendable class 优先改为 struct 或 actor
+92. **nonisolated**：actor 中不访问可变状态的方法/属性标记 `nonisolated`，调用时不需要 await，提升性能
+93. **Task.detached**：脱离当前 actor 隔离，UI 更新需 `await MainActor.run { }`；`Task { }` 默认继承当前 actor
+94. **Equatable View**：实现 `View, Equatable` 可防止不必要重绘；`List` 中用 `.id(item.id)` 防止复用错误
+95. **架构选型**：小型 App 用 MVVM + @Observable；中型加 Repository + UseCase + DI；大型用 Feature Modules；TCA 仅适合非常复杂的状态流
 
 ## 崩溃报告分析与符号化
 ```swift
