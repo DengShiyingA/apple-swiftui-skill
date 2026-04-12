@@ -1895,6 +1895,53 @@ VStack { ... }.accessibilityElement(children: .combine)
 
 // 动态字体支持（自动，无需额外代码）
 Text("Title").font(.headline)  // 随系统字体大小缩放
+
+// === Dynamic Type 范围限制 ===
+Text("Fixed Range")
+    .dynamicTypeSize(.medium ... .xxxLarge)  // 限制缩放范围
+
+// === WCAG 对比度 ===
+// 标准文字最低 4.5:1，大号文字最低 3:1
+// 使用 Accessibility Inspector (Xcode → Open Developer Tool) 检测对比度
+// 浅色/深色模式都需要达标
+
+// === 键盘导航（iPad / Mac）===
+Button("Action") { }
+    .keyboardShortcut("n", modifiers: .command)  // Cmd+N
+    .focusable()  // 支持键盘 Tab 导航
+
+// === Reduce Motion / Transparency 适配 ===
+@Environment(\.accessibilityReduceMotion) var reduceMotion
+withAnimation(reduceMotion ? .none : .spring()) { isExpanded.toggle() }
+
+@Environment(\.accessibilityReduceTransparency) var reduceTransparency
+// reduceTransparency == true → 用不透明材质替代 Liquid Glass
+
+// === VoiceOver 排序 ===
+VStack {
+    header.accessibilitySortPriority(2)  // 先播报
+    content.accessibilitySortPriority(1)  // 后播报
+}
+
+// === visionOS 实体无障碍 ===
+entity.components.set(AccessibilityComponent(
+    label: "3D Robot Model",
+    value: "Interactive",
+    traits: .isButton
+))
+```
+
+**Accessibility 测试 Checklist**：
+```
+// □ VoiceOver 逐页测试（每个元素有 label + traits）
+// □ Dynamic Type 全范围测试（xSmall → AX5）
+// □ Reduce Motion 开启时无动画崩溃
+// □ Reduce Transparency 开启时 Liquid Glass fallback 正常
+// □ Increase Contrast 开启时文字可读
+// □ 键盘导航（Tab 顺序合理，所有操作可键盘完成）
+// □ Switch Control 兼容
+// □ Accessibility Inspector 颜色对比度检查
+// □ visionOS 实体有 AccessibilityComponent
 ```
 
 ## Custom Layout（Layout 协议）
