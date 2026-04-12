@@ -6861,6 +6861,73 @@ guard auth[.worldSensing] != .denied else { return }
 // 其他隐私 key 同 iOS（CoreLocation 等）
 ```
 
+### visionOS 2D 窗口增强深度
+```swift
+// Model3D：在 2D 窗口中显示静态 3D 模型（无需 RealityView）
+Model3D(named: "robot.usdz")
+
+// 2D View 深度效果
+Text("Hello").rotation3DEffect(.degrees(15), axis: (x: 1, y: 0, z: 0))
+Image("icon").hoverEffect(.lift)  // 注视时抬起效果
+
+// Window 尺寸控制
+WindowGroup { ContentView() }
+    .defaultSize(CGSize(width: 600, height: 400))
+    .windowResizability(.contentSize)  // 或 .contentMinSize
+
+// Window 内容约束尺寸范围
+ContentView().frame(minWidth: 100, maxWidth: 400, minHeight: 100, maxHeight: 400)
+```
+
+### visionOS 实体交互（必需组件）
+```swift
+// 实体必须同时有 InputTargetComponent + CollisionComponent 才能接收手势
+let entity = ModelEntity(mesh: .generateSphere(radius: 0.1),
+    materials: [SimpleMaterial(color: .white, isMetallic: true)])
+entity.components.set(InputTargetComponent())  // 必需
+entity.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.1)]))  // 必需
+
+// OcclusionMaterial：让虚拟内容被真实物体遮挡
+let occluder = ModelEntity(mesh: roomMesh, materials: [OcclusionMaterial()])
+
+// 手势类型
+.gesture(TapGesture().targetedToAnyEntity().onEnded { _ in })
+.gesture(DragGesture().targetedToAnyEntity().onChanged { value in })
+.gesture(RotateGesture3D().targetedToAnyEntity().onChanged { value in })
+```
+
+### Immersion 样式
+```swift
+ImmersiveSpace(id: "immersive") { ImmersiveView() }
+    .immersionStyle(selection: $style, in: .mixed, .progressive, .full)
+// .mixed       → 与现实共存（默认），注意不要遮挡太多真实环境
+// .progressive → 渐进式沉浸，可调节沉浸程度
+// .full        → 完全沉浸，隐藏其他 App 和现实环境
+```
+
+## Xcode Capabilities 添加指南
+```
+// Signing & Capabilities → + Capability → 选择需要的能力
+
+// 常用 Capabilities 及其额外配置：
+// App Groups      → 设置 group ID，用于 App/Widget/Extension 数据共享
+// iCloud           → 启用 CloudKit，选择或创建 Container
+// Background Modes → 勾选需要的模式（Audio, Location, Push, Background Tasks）
+// Push Notifications → 自动配置 APNs 权限
+// HealthKit        → 开启后需在 Info.plist 添加 Usage Description
+// In-App Purchase  → 无额外配置，直接使用 StoreKit API
+// Sign in with Apple → 无额外配置
+// Associated Domains → 添加 applinks: / webcredentials: 域名
+// Keychain Sharing  → 设置 Keychain Group
+// Game Center       → 在 App Store Connect 中配置成就/排行榜
+
+// 注意：
+// - 默认使用 Automatic Signing，Xcode 自动管理 Provisioning Profile
+// - 添加 Capability 后 Xcode 会修改 entitlements 文件
+// - 部分 Capability 需要 Apple Developer Program 会员资格
+// - 首次在真机运行时自动注册设备并创建开发 Profile
+```
+
 ## App Store Connect API
 ```swift
 // === JWT Token 生成（ES256）===
