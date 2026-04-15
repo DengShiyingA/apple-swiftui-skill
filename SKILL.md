@@ -5841,6 +5841,103 @@ listener.newConnectionHandler = { newConnection in
 listener.start(queue: .global())
 ```
 
+## WebSocket（URLSessionWebSocketTask）
+```swift
+// 创建 WebSocket 连接
+let url = URL(string: "wss://echo.example.com/socket")!
+let task = URLSession.shared.webSocketTask(with: url)
+task.resume()
+
+// 发送文本消息
+try await task.send(.string("Hello"))
+
+// 发送二进制消息
+try await task.send(.data(myData))
+
+// 接收消息（单次）
+let message = try await task.receive()
+switch message {
+case .string(let text): print("Received: \(text)")
+case .data(let data): print("Received \(data.count) bytes")
+@unknown default: break
+}
+
+// 持续接收（AsyncStream 模式）
+func messageStream(task: URLSessionWebSocketTask) -> AsyncThrowingStream<URLSessionWebSocketTask.Message, Error> {
+    AsyncThrowingStream { continuation in
+        Task {
+            do {
+                while !Task.isCancelled {
+                    let message = try await task.receive()
+                    continuation.yield(message)
+                }
+                continuation.finish()
+            } catch {
+                continuation.finish(throwing: error)
+            }
+        }
+    }
+}
+
+// 使用
+for try await message in messageStream(task: task) {
+    if case .string(let text) = message { handleText(text) }
+}
+
+// Ping/Pong 保活（每 30 秒）
+Task {
+    while !Task.isCancelled {
+        try await Task.sleep(for: .seconds(30))
+        task.sendPing { error in
+            if let error { print("Ping failed: \(error)") }
+        }
+    }
+}
+
+// 关闭连接
+task.cancel(with: .goingAway, reason: "App closing".data(using: .utf8))
+
+// URLSessionWebSocketDelegate（监听连接事件）
+class WSDelegate: NSObject, URLSessionWebSocketDelegate {
+    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask,
+                    didOpenWithProtocol protocol: String?) {
+        print("WebSocket opened")
+    }
+    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask,
+                    didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        print("WebSocket closed: \(closeCode)")
+    }
+}
+
+// 自动重连模式
+actor WebSocketClient {
+    private var task: URLSessionWebSocketTask?
+    private let url: URL
+    private var retryCount = 0
+
+    init(url: URL) { self.url = url }
+
+    func connect() async throws {
+        task = URLSession.shared.webSocketTask(with: url)
+        task?.resume()
+        retryCount = 0
+    }
+
+    func reconnect() async throws {
+        let delay = min(pow(2.0, Double(retryCount)), 30.0)  // 指数退避，最多 30s
+        try await Task.sleep(for: .seconds(delay))
+        retryCount += 1
+        try await connect()
+    }
+}
+```
+
+**坑点**：
+- `receive()` 一次只接收一条消息，必须循环调用否则消息会积压
+- `send()` 在连接未建立时不会立即失败，错误可能延迟到 `receive()` 才抛出
+- 忘记 `resume()` → 连接不会建立
+- App 进入后台时 WebSocket 会被挂起，需配合 `URLSessionConfiguration.background` 或在前台恢复时重连
+
 ## CoreLocation 进阶
 
 ### 地理围栏（CLMonitor，iOS 17+ 异步 API）
