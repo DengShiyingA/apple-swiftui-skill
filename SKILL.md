@@ -5425,6 +5425,172 @@ do {
 }
 ```
 
+## Apple Intelligence UI（Image Playground + Genmoji）
+```swift
+import ImagePlayground
+
+// === Image Playground Sheet（SwiftUI）===
+struct ContentView: View {
+    @State private var showPlayground = false
+    @State private var generatedImage: URL?
+
+    var body: some View {
+        Button("生成图像") { showPlayground = true }
+            .imagePlaygroundSheet(
+                isPresented: $showPlayground,
+                concept: "A cute cat astronaut",  // 起始概念
+                sourceImage: nil                   // 可选源图片
+            ) { url in
+                generatedImage = url  // 用户保存图片后回调
+            } onCancellation: {
+                // 用户取消
+            }
+    }
+}
+
+// === 检查可用性（设备 / 地区限制）===
+import ImagePlayground
+let isAvailable = ImagePlaygroundViewController.isAvailable
+// 不可用时隐藏入口，不要显示禁用按钮
+
+// === 程序化生成图像（ImageCreator）===
+let creator = try await ImageCreator()
+let style = creator.availableStyles.first!  // .animation / .illustration / .sketch
+let images = creator.images(
+    for: [.text("A futuristic city at sunset")],
+    style: style,
+    limit: 4
+)
+for try await image in images {
+    // image.cgImage 可用于显示或保存
+    saveImage(image)
+}
+
+// === Genmoji（通过 NSAdaptiveImageGlyph 在富文本中嵌入）===
+// iOS 18+ TextField 自动支持 Genmoji 输入（前提：用户设备支持 Apple Intelligence）
+@State private var text = AttributedString("")
+TextField("输入内容", text: $text)
+    .textInputAutocapitalization(.sentences)
+// 系统键盘会显示 Genmoji 按钮，生成的表情自动作为 NSAdaptiveImageGlyph 嵌入
+
+// 自定义文本视图（UITextView）支持 Genmoji
+textView.supportsAdaptiveImageGlyph = true
+```
+
+**坑点**：
+- Image Playground 需要 Apple Intelligence 支持的设备（M1 以上 iPad/Mac，iPhone 15 Pro 以上）
+- 部分地区不可用 → 必须用 `isAvailable` 检查
+- Genmoji 只能在支持 `NSAdaptiveImageGlyph` 的富文本中显示，普通 `String` 不支持
+- 生成图像有内容审核 → 失败时优雅降级
+
+## MetalFX 与 Metal 4
+```swift
+import MetalFX
+
+// === Spatial Upscaling（空间放大，低分辨率渲染 → 高分辨率输出）===
+let descriptor = MTLFXSpatialScalerDescriptor()
+descriptor.inputWidth = 1280
+descriptor.inputHeight = 720
+descriptor.outputWidth = 2560
+descriptor.outputHeight = 1440
+descriptor.colorTextureFormat = .bgra8Unorm_srgb
+descriptor.outputTextureFormat = .bgra8Unorm_srgb
+
+guard let scaler = descriptor.makeSpatialScaler(device: device) else { return }
+scaler.colorTexture = lowResTexture
+scaler.outputTexture = highResTexture
+scaler.encode(commandBuffer: commandBuffer)
+
+// === Temporal Upscaling（时间放大，使用运动矢量提高质量）===
+let tempDesc = MTLFXTemporalScalerDescriptor()
+tempDesc.inputWidth = 1280
+tempDesc.inputHeight = 720
+tempDesc.outputWidth = 2560
+tempDesc.outputHeight = 1440
+tempDesc.colorTextureFormat = .bgra8Unorm_srgb
+tempDesc.depthTextureFormat = .depth32Float
+tempDesc.motionTextureFormat = .rg16Float
+
+let tempScaler = tempDesc.makeTemporalScaler(device: device)
+tempScaler?.colorTexture = colorTexture
+tempScaler?.depthTexture = depthTexture
+tempScaler?.motionTexture = motionTexture
+tempScaler?.outputTexture = outputTexture
+tempScaler?.jitterOffsetX = jitter.x
+tempScaler?.jitterOffsetY = jitter.y
+tempScaler?.motionVectorScaleX = 1.0
+tempScaler?.motionVectorScaleY = 1.0
+tempScaler?.reset = isFirstFrame
+tempScaler?.encode(commandBuffer: commandBuffer)
+
+// Metal 4 新特性：
+// - 基于 Shader 的推理网络（Neural Rendering）
+// - 改进的 Argument Buffers
+// - Game Porting Toolkit 3（macOS 上运行 Windows DirectX 12 游戏）
+```
+
+**坑点**：
+- MetalFX Temporal 需要每帧的运动矢量和深度图，少一个就退化为 Spatial
+- Jitter offset 必须随帧变化（Halton 序列推荐）
+- `reset = true` 在场景切换时使用，避免 ghosting 残影
+
+## Swift 6.3 新特性
+```swift
+// === @c 属性：将 Swift 函数暴露给 C ===
+@c func processData(_ ptr: UnsafePointer<UInt8>, length: Int32) -> Int32 {
+    // 自动生成对应的 C header 声明
+    return 0
+}
+// 自定义 C 名称
+@c(swift_process_v2) func processV2() { }
+
+// === @implementation：用 Swift 实现 C 声明的函数 ===
+// 头文件：int compute(int x);
+@implementation
+@c func compute(_ x: Int32) -> Int32 { x * 2 }
+
+// === 模块名选择器（::）解决同名 API 冲突 ===
+import ModuleA
+import ModuleB
+let valueA = ModuleA::getValue()  // 明确指定来自 ModuleA
+let valueB = ModuleB::getValue()
+
+// 访问 Swift 标准库并发 API
+let task = Swift::Task { ... }
+
+// === 性能优化属性 ===
+@specialize(where T == Int)         // 预特化生成针对 Int 的优化版本
+func process<T: Numeric>(_ value: T) -> T { value * 2 }
+
+@inline(always)                      // 强制内联
+func fastAdd(_ a: Int, _ b: Int) -> Int { a + b }
+
+@export(implementation)              // ABI 稳定库中暴露实现
+public func criticalPath() { }
+
+// === Swift Testing 6.3 新特性 ===
+@Test func warningExample() async throws {
+    // severity 参数：警告级别 issue（不致测试失败）
+    Issue.record("This is a warning", severity: .warning)
+}
+
+@Test func cancelable() async throws {
+    if someCondition {
+        try Test.cancel()  // 主动取消测试，标记为 skipped
+    }
+}
+
+// 测试附件（截图等）
+let image = UIImage(...)
+Attachment(image, named: "screenshot.png")
+```
+
+**坑点**：
+- `@c` 只能用于全局函数和枚举，不能用于类型/方法
+- 模块选择器 `::` 需要 Swift 6.3+，旧版本编译失败
+- `@inline(always)` 滥用会增加二进制大小
+- `Test.cancel()` 与 `@Test(.disabled)` 不同：前者是运行时判断，后者是编译时
+
 ## AVPlayer + Observation 框架（iOS 26，WWDC25）
 ```swift
 import AVFoundation
@@ -7761,6 +7927,11 @@ extension EnvironmentValues {
 93. **Task.detached**：脱离当前 actor 隔离，UI 更新需 `await MainActor.run { }`；`Task { }` 默认继承当前 actor
 94. **Equatable View**：实现 `View, Equatable` 可防止不必要重绘；`List` 中用 `.id(item.id)` 防止复用错误
 95. **架构选型**：小型 App 用 MVVM + @Observable；中型加 Repository + UseCase + DI；大型用 Feature Modules；TCA 仅适合非常复杂的状态流
+96. **Image Playground**：必须用 `ImagePlaygroundViewController.isAvailable` 检查可用性；不支持的设备/地区要隐藏入口而非禁用按钮
+97. **Genmoji**：只能嵌入 `NSAdaptiveImageGlyph` 富文本，普通 `String` 会被剥离；UITextView 需设 `supportsAdaptiveImageGlyph = true`
+98. **MetalFX Temporal**：缺少运动矢量或深度图会退化为 Spatial 模式；Jitter offset 必须每帧变化（推荐 Halton 序列）
+99. **WebSocket 后台**：App 进入后台时 WebSocket 会被挂起，配合 `URLSessionConfiguration.background` 或前台恢复时重连
+100. **Swift 6.3 @c**：只能用于全局函数和枚举，类型和方法不支持；模块选择器 `::` 需 Swift 6.3+
 
 ## 崩溃报告分析与符号化
 ```swift
