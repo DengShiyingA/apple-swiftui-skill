@@ -1,33 +1,44 @@
 ---
 name: apple-swiftui-development
 description: >
-  Use when building, debugging, or reviewing Apple platform apps with SwiftUI, Swift 6.2, Xcode 26, or Apple framework integrations across iOS, iPadOS, macOS, visionOS, watchOS, and tvOS, especially for Liquid Glass, Foundation Models, SwiftData, WidgetKit, App Intents, HealthKit, CloudKit, RealityKit, StoreKit 2, AVFoundation, CoreML, Vision, ARKit, Passkeys, accessibility, localization, and production app architecture questions.
+  Use when building, debugging, or reviewing Apple platform apps with SwiftUI, Swift 6.3+, Xcode 26/27, or Apple framework integrations across iOS, iPadOS, macOS, visionOS, watchOS, and tvOS, especially for Liquid Glass, Foundation Models, Core AI, SwiftData, WidgetKit, App Intents, HealthKit, CloudKit, RealityKit, StoreKit 2, AVFoundation, CoreML, Vision, ARKit, Passkeys, accessibility, localization, and production app architecture questions.
 ---
 
-# SwiftUI Development - Production Knowledge Base（2026 年 4 月完整版）
+# SwiftUI Development - Production Knowledge Base（2026 年 6 月更新版）
 
-专注 **iOS 26+ / Swift 6.2 / Xcode 26** 现代应用开发。覆盖 SwiftUI、Apple Intelligence、Liquid Glass、SwiftData、WidgetKit、App Intents、HealthKit、CloudKit、RealityKit、Apple Pay、AVFoundation、CoreML、Vision、ARKit、CoreImage、EventKit、Contacts、Passkeys、BackgroundTasks、SpriteKit、CreateML、DocumentGroup、Layout 协议、Accessibility、Localization、Combine、Network Framework、CoreLocation 高级、CoreData、Authentication Services、watchOS、tvOS、visionOS、App Store Connect API 等 **45+ 框架**，100+ 章节，1000+ 代码示例。
+专注 **iOS 26+ / Swift 6.3+ / Xcode 26** 稳定生产开发，并跟踪 **iOS 27 beta / Xcode 27 beta / WWDC26** 新 API。覆盖 SwiftUI、Apple Intelligence、Liquid Glass、Foundation Models、Core AI、SwiftData、WidgetKit、App Intents、HealthKit、CloudKit、RealityKit、Apple Pay、AVFoundation、CoreML、Vision、ARKit、CoreImage、EventKit、Contacts、Passkeys、BackgroundTasks、SpriteKit、CreateML、DocumentGroup、Layout 协议、Accessibility、Localization、Combine、Network Framework、CoreLocation 高级、CoreData、Authentication Services、watchOS、tvOS、visionOS、App Store Connect API 等 **45+ 框架**，100+ 章节，1000+ 代码示例。
 
 ## 快速导航
-- **先看这里**：Liquid Glass、SwiftUI 基础、Observation、SwiftData、Foundation Models、App Intents、WidgetKit、导航、测试、性能优化
+- **先看这里**：Liquid Glass、SwiftUI 基础、Observation、SwiftData、Foundation Models、Core AI、App Intents、WidgetKit、导航、测试、性能优化
 - **做产品功能**：StoreKit 2、Push Notifications、Apple Pay、Sign in with Apple、Passkeys、Deep Link / Universal Links、App 发布必备、统一错误处理、分页 / 无限滚动、图片缓存策略
 - **做系统能力**：HealthKit、CloudKit、CoreLocation + MapKit、BackgroundTasks、Contacts、EventKit、CoreBluetooth、Network Framework
 - **做媒体 / AI / 视觉**：AVFoundation、CoreML + Vision、Vision 文档表格识别、Foundation Models 安全与高级用法、Writing Tools 集成、CoreImage、ReplayKit
 - **做 AR / 空间计算**：ARKit、RealityKit、visionOS 进阶、Room Tracking、场景重建、PhotogrammetrySession、RealityKit 粒子 / 着色器
 - **做多平台 / 工具链**：watchOS 开发、tvOS 开发、macOS 菜单命令、多窗口 + 状态恢复、Xcode 调试、Xcode 性能分析、Xcode Cloud、App Store Connect API
 - **需要速查时**：常用修饰符速查、常用控件速查、其他常用框架速查、SwiftUI 修饰符补全、Xcode 开发者工具速查、常见坑点
-- **检索建议**：优先搜索英文 API 名或章节标题，如 `LanguageModelSession`、`glassEffectUnion`、`AppIntent`、`StoreKit 2`、`NWConnection`、`Room Tracking`、`统一错误处理`
+- **检索建议**：优先搜索英文 API 名或章节标题，如 `LanguageModelSession`、`Dynamic Profiles`、`Core AI`、`WritableDocument`、`toolbarMinimizeBehavior`、`glassEffectUnion`、`AppIntent`、`StoreKit 2`、`NWConnection`、`Room Tracking`、`统一错误处理`
 
 ## 平台快照
 | 项目 | 值 |
 |------|-----|
-| OS | iOS 26 / iPadOS 26 / macOS Tahoe 26 / visionOS 26 |
-| 语言 | **Swift 6.2**（严格并发 + Observations AsyncSequence） |
+| OS | 稳定线：iOS 26 / iPadOS 26 / macOS Tahoe 26 / visionOS 26；预览线：iOS 27 / iPadOS 27 / macOS 27 / watchOS 27 / tvOS 27 / visionOS 27 beta |
+| 语言 | **Swift 6.3+**（严格并发 + Observations AsyncSequence；新项目继续开启完整并发检查） |
 | UI 框架 | **SwiftUI** + **Liquid Glass** 设计语言 |
-| AI 框架 | **Foundation Models**（on-device LLM，2026.02 更新） |
+| AI 框架 | **Foundation Models**（on-device + server + 第三方 provider）/ **Core AI**（自定义本地模型）/ **Evaluations**（AI 功能评估） |
 | 数据持久化 | **SwiftData**（推荐）|
 | 状态管理 | **Observation 框架**（@Observable + Observations AsyncSequence） |
-| IDE | **Xcode 26**（Coding Intelligence + SwiftUI Performance Instrument） |
+| IDE | **Xcode 26** 稳定线；**Xcode 27 beta**（agentic coding、Device Hub、agent 验证工作流） |
+
+## 2026-06 官方更新速记（WWDC26 / iOS 27 beta）
+
+> iOS 27 / Xcode 27 仍是 beta 线。生产项目默认以 iOS 26 / Xcode 26 为稳定基线；只有当用户明确要求 beta、新 API 验证或 WWDC26 迁移时，才优先使用本节 API，并用 `#available` 或条件编译隔离。
+
+- **SwiftUI**：新增 Document API（`ReadableDocument` / `WritableDocument`、直接磁盘访问、snapshot diffing、`DocumentCreationSource`、`NewDocumentButton`）、List/Grid/Section 内容重排 API、toolbar 可见性优先级与自动最小化、任意 View 的 swipe actions、`AsyncImage` 缓存增强、Observable 类型的 lazy state initialization。
+- **Foundation Models**：从仅本地语言模型扩展为统一 Swift API，可接入更强 on-device models、Private Cloud Compute server models、Claude/Gemini 等第三方 provider、image input、custom skills、Dynamic Profiles。
+- **Core AI**：新框架，用于在 Apple silicon 上部署和运行自定义 on-device 模型；适合需要自带模型、隐私本地推理、无 token 成本的场景。
+- **Evaluations**：用于评估 AI 功能在动态条件下的行为，覆盖 prompt、工具调用、多轮 agent flow；不要只靠 unit tests 验证生成式功能。
+- **App Intents + Siri AI**：新增 entity schemas、intent schemas、View Annotations API、App Intents Testing framework，让内容进入 Spotlight semantic index，并支持 Siri 基于屏幕上下文和个人上下文执行动作。
+- **Xcode 27**：agentic coding 增强，agent 可生成计划、多轮问答、查看预览和 diff、运行测试、使用 Playgrounds 验证想法，并通过 Device Hub 与模拟器交互。
 
 ## 项目结构
 ```
@@ -74,7 +85,7 @@ Image("icon")
 
 **HIG 要点**：多个 glassEffect 必须包在 `GlassEffectContainer` 中，否则性能下降；自动适配 Dark Mode。
 
-## SwiftUI 基础（Swift 6.2）
+## SwiftUI 基础（Swift 6.3+）
 ```swift
 @Observable
 class CounterViewModel {
@@ -98,7 +109,7 @@ struct CounterView: View {
 
 ## 状态管理（Observation 框架）
 ```swift
-// Swift 6.2 Observations AsyncSequence（transactional 快照）
+// Swift 6.3+ Observations AsyncSequence（transactional 快照）
 @Observable class ShoppingCart {
     var items: [String] = []
     var total: Decimal = 0
@@ -912,6 +923,42 @@ List { ... }.sectionIndexTitles(sections.map(\.title))
 // visionOS Spatial Layout
 WindowGroup { ContentView() }.windowStyle(.volumetric)
 ImmersiveSpace(id: "main") { ImmersiveView() }
+```
+
+## SwiftUI 新特性（iOS 27 / WWDC26 beta）
+
+> 仅在用户明确要求 iOS 27 / Xcode 27 / WWDC26 beta API 时使用。生产代码必须保留 iOS 26 fallback，并用 `#available(iOS 27, macOS 27, *)` 隔离。
+
+### Document API
+```swift
+// iOS 27 / macOS 27：新 Document API 支持直接磁盘访问、异步读写、
+// snapshot diffing 和进度报告，适合大型文档与专业创作类 App。
+// 关键类型：ReadableDocument、WritableDocument、DocumentCreationSource、NewDocumentButton。
+```
+
+### Toolbar 控制
+```swift
+ToolbarItem(placement: .topBarTrailing) {
+    ShareLink(item: documentURL)
+        .visibilityPriority(1)       // 窗口变窄时优先保留
+}
+
+// 低优先级操作固定进入 overflow menu；滚动时导航栏可自动最小化。
+// 关键 API：toolbarOverflowMenu、topBarPinnedTrailing、toolbarMinimizeBehavior。
+```
+
+### 重排 / 交互 / 性能
+```swift
+// List / Grid / Section：优先使用系统 reordering API，
+// 少写 DragGesture + 手动数组交换，保留 accessibility 和平台行为。
+
+// swipe actions：iOS 27 扩展到任意 View，不再局限 List row。
+
+// AsyncImage：优先使用新的 caching / request 配置能力；
+// 需要鉴权、缓存策略或共享 URLSession 时，不要再自写重复 image loader。
+
+// Observable lazy state initialization：
+// 大型 @Observable view model 可延迟初始化，减少首屏成本。
 ```
 
 ## Xcode 工具
@@ -4645,6 +4692,18 @@ if settings.authorizationStatus == .authorized { /* 已授权 */ }
 ```swift
 import AppIntents
 
+// WWDC26 / iOS 27 beta：Siri AI 通过 App Intents 更深入理解 App 内容和屏幕上下文。
+// 关键能力：
+// - Entity schemas：把 App 内容贡献给 Spotlight semantic index
+// - Intent schemas：让 Siri 用自然语言触发 App 动作，减少固定短语依赖
+// - View Annotations API：把屏幕上的 SwiftUI/UIKit View 映射到 AppEntity
+// - App Intents Testing framework：通过系统路径验证 intent，不依赖 UI 自动化
+//
+// 生产建议：
+// 1. 先为核心业务对象设计稳定 AppEntity id。
+// 2. 把权限、隐私和 destructive action confirmation 放进 intent 层。
+// 3. 用 App Intents Testing 覆盖同名实体、缺权限、无网络、跨语言 query。
+
 // Assistant Schema（Apple Intelligence 深度集成）
 struct OpenPhotoIntent: AppIntent {
     static var title: LocalizedStringResource = "Open Photo"
@@ -5261,6 +5320,43 @@ UnevenRoundedRectangle(topLeadingRadius: 20, bottomTrailingRadius: 20)
 
 
 ## Foundation Models 安全与高级用法（WWDC25）
+
+### WWDC26 / iOS 27 beta 更新
+```swift
+// Foundation Models 从单一 on-device LLM 使用场景扩展为统一 Swift API：
+// - Apple on-device models
+// - Apple Foundation Models on Private Cloud Compute
+// - 第三方 provider（如 Claude / Gemini，需符合 Language Model protocol）
+// - image input / multimodal prompts
+// - custom skills
+// - Dynamic Profiles（连续 session 中动态切换 model / tools / instructions）
+//
+// 生产建议：
+// 1. 把 model/provider 选择封装在 service 层，不要让 View 直接依赖具体模型。
+// 2. 对 server models 和第三方 provider 标注隐私、区域、成本和降级策略。
+// 3. 生成式功能必须配 Evaluations 或回归样本集，不要只写单元测试。
+```
+
+### Core AI（自定义 on-device 模型）
+```swift
+// Core AI 是 WWDC26 新框架，面向自带模型本地推理：
+// - 适合自定义 LLM / 专用模型 / 隐私敏感推理
+// - 针对 Apple silicon unified memory 和 Neural Engine 优化
+// - 与 Foundation Models 的区别：Foundation Models 调系统/云端/第三方语言模型；
+//   Core AI 负责加载、专门化并运行开发者自己的模型。
+```
+
+### Evaluations framework
+```swift
+// Evaluations 用于验证 AI 功能在动态条件下是否符合预期：
+// - prompt 变体
+// - tool calling
+// - multi-turn agent flow
+// - safety / refusal / locale 行为
+//
+// 建议把关键 AI feature 的示例输入、期望行为、拒绝场景和区域语言差异
+// 固化为 evaluation cases，纳入 release gate。
+```
 
 ### Session Instructions（系统指令，优先于 prompt）
 ```swift
@@ -7709,7 +7805,7 @@ final class ArticleRepositoryImpl: ArticleRepository {
 }
 ```
 
-### ViewModel（Swift 6.2 严格并发）
+### ViewModel（Swift 6.3+ 严格并发）
 ```swift
 @MainActor @Observable
 final class HomeViewModel {
